@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: otobo
+Version: 0.1.0
+Summary: Python client library for the OTOBO REST API
+Author-email: Tobias Bück <tab@softoft.de>
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: httpx>=0.28.1
+Requires-Dist: pydantic>=2.10.6
+Requires-Dist: pytest>=8.3.5
+Requires-Dist: pytest-asyncio>=0.24.0
+Requires-Dist: requests

@@ -1,0 +1,107 @@
+{
+  'TicketHistory': [
+    {
+      'TicketID': '12',
+      'History': [
+        {
+          'TicketID': '12',
+          'OwnerID': 1,
+          'CreateBy': 1,
+          'TypeID': 1,
+          'QueueID': 1,
+          'ArticleID': 0,
+          'HistoryTypeID': 1,
+          'StateID': 1,
+          'Name': '%%2024100201000065%%Postmaster%%4 high%%new%%12',
+          'HistoryType': 'NewTicket',
+          'CreateTime': '2024-10-02 07:02:39',
+          'PriorityID': 4
+        },
+        {
+          'PriorityID': 4,
+          'HistoryType': 'CustomerUpdate',
+          'CreateTime': '2024-10-02 07:02:39',
+          'Name': '%%CustomerID=GreenIT;CustomerUser=bernd.helm;',
+          'TypeID': 1,
+          'CreateBy': 1,
+          'StateID': 1,
+          'HistoryTypeID': 21,
+          'QueueID': 1,
+          'ArticleID': 0,
+          'OwnerID': 1,
+          'TicketID': '12'
+        },
+        {
+          'PriorityID': 4,
+          'CreateTime': '2024-10-02 07:02:39',
+          'HistoryType': 'WebRequestCustomer',
+          'Name': '%%',
+          'TypeID': 1,
+          'CreateBy': 1,
+          'StateID': 1,
+          'HistoryTypeID': 29,
+          'QueueID': 1,
+          'ArticleID': 18,
+          'OwnerID': 1,
+          'TicketID': '12'
+        },
+        {
+          'Name': 'Generic Agent note added.',
+          'PriorityID': 4,
+          'HistoryType': 'AddNote',
+          'CreateTime': '2024-10-02 07:02:39',
+          'OwnerID': 1,
+          'TicketID': '12',
+          'StateID': 1,
+          'HistoryTypeID': 15,
+          'ArticleID': 19,
+          'QueueID': 1,
+          'TypeID': 1,
+          'CreateBy': 1
+        },
+        {
+          'Name': 'Reset of unlock time.',
+          'PriorityID': 4,
+          'HistoryType': 'Misc',
+          'CreateTime': '2024-10-02 07:02:39',
+          'OwnerID': 1,
+          'TicketID': '12',
+          'TypeID': 1,
+          'CreateBy': 1,
+          'StateID': 1,
+          'HistoryTypeID': 25,
+          'ArticleID': 0,
+          'QueueID': 1
+        },
+        {
+          'PriorityID': 4,
+          'HistoryType': 'TitleUpdate',
+          'CreateTime': '2024-10-02 07:02:39',
+          'Name': '%%TEST%%ticket - <OTOBO_TICKET_DynamicField_customerUserIH...',
+          'TypeID': 1,
+          'CreateBy': 1,
+          'StateID': 1,
+          'HistoryTypeID': 50,
+          'QueueID': 1,
+          'ArticleID': 0,
+          'OwnerID': 1,
+          'TicketID': '12'
+        },
+        {
+          'HistoryType': 'StateUpdate',
+          'CreateTime': '2024-10-02 07:05:39',
+          'PriorityID': 4,
+          'Name': '%%new%%closed successful%%',
+          'ArticleID': 0,
+          'QueueID': 1,
+          'HistoryTypeID': 27,
+          'StateID': 2,
+          'CreateBy': 2,
+          'TypeID': 1,
+          'TicketID': '12',
+          'OwnerID': 1
+        }
+      ]
+    }
+  ]
+}

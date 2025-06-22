@@ -1,0 +1,10 @@
+pyproject.toml
+otobo/otobo.egg-info/PKG-INFO
+otobo/otobo.egg-info/SOURCES.txt
+otobo/otobo.egg-info/dependency_links.txt
+otobo/otobo.egg-info/requires.txt
+otobo/otobo.egg-info/top_level.txt
+otobo/tests/__init__.py
+otobo/tests/client_usage.py
+otobo/tests/test_client.py
+otobo/tests/test_client_integration.py
