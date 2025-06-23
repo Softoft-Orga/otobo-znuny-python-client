@@ -3,10 +3,10 @@ import logging
 import time
 import sys
 
-from client_config_models import TicketOperation, OTOBOClientConfig
+from models.client_config_models import TicketOperation, OTOBOClientConfig
 from models.request_models import AuthData, TicketSearchParams, TicketCreateParams, TicketHistoryParams, TicketUpdateParams, \
     TicketGetParams
-from otobo.otobo_client import (
+from otobo_client import (
     OTOBOClient
 )
 

@@ -40,6 +40,10 @@ Provider:
     ticket-history-get:
       Description: ''
       IncludeTicketData: '0'
+      MappingInbound:
+        Type: Simple
+      MappingOutbound:
+        Type: Simple
       Type: Ticket::TicketHistoryGet
     ticket-search:
       Description: ''
@@ -79,20 +83,20 @@ Provider:
           Route: /ticket
         ticket-get:
           RequestMethod:
-          - GET
           - HEAD
           - OPTIONS
-          Route: /ticket
+          - POST
+          Route: /ticket/get
         ticket-history-get:
           RequestMethod:
-          - GET
           - HEAD
           - OPTIONS
+          - POST
           Route: /ticket/history
         ticket-search:
           RequestMethod:
-          - GET
           - HEAD
+          - OPTIONS
           - POST
           Route: /ticket/search
         ticket-update:
@@ -106,4 +110,4 @@ Provider:
 RemoteSystem: ''
 Requester:
   Transport:
-    Type: ''
+    Type: HTTP::REST
