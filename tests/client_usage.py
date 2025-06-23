@@ -13,7 +13,7 @@ from otobo_client import (
 
 async def main():
     # --- Configuration ---
-    BASE_URL = "http://18.193.56.84/otobo/nph-genericinterface.pl"
+    BASE_URL = "https://localhost/otobo/nph-genericinterface.pl"
     SERVICE = "OTOBO"
     USER = "root@localhost"
     PASSWORD = "1234"
