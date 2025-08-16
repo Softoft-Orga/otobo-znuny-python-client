@@ -215,6 +215,11 @@ class TicketSearchParams(BaseModel):
 class TicketCreateParams(TicketDetailInput):
     """
     Parameters for creating a new ticket, extends TicketDetailInput.
+    Attributes:
+        Ticket (Optional[TicketCommon]): Core ticket fields to set.
+        Article (Optional[Union[ArticleDetail,List[ArticleDetail]]]): Article(s) to attach.
+        DynamicField (Optional[List[DynamicFieldItem]]): Dynamic fields to set.
+        Attachment (Optional[AttachmentModel]): Single attachment to include.
     """
     pass
 
@@ -264,6 +269,10 @@ class TicketUpdateParams(TicketDetailInput):
     Attributes:
         TicketID (Optional[int]): ID of the ticket to update.
         TicketNumber (Optional[str]): Number of the ticket to update.
+        Ticket (Optional[TicketCommon]): Core ticket fields to set.
+        Article (Optional[Union[ArticleDetail,List[ArticleDetail]]]): Article(s) to attach.
+        DynamicField (Optional[List[DynamicFieldItem]]): Dynamic fields to set.
+        Attachment (Optional[AttachmentModel]): Single attachment to include.
     """
     TicketID: Optional[int] = None
     TicketNumber: Optional[str] = None

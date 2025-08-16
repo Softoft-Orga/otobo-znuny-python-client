@@ -19,6 +19,7 @@ and ease of use.
 
 ## Installation
 
+[OTOBO](https://pypi.org/project/otobo/) is available on PyPI and can be installed using pip:
 Install from PyPI:
 
 ```bash

@@ -85,6 +85,26 @@ class TicketCommon(TicketBase):
     Extended ticket fields common to detailed output.
 
     Attributes:
+        Title (Optional[str]): Subject or title of the ticket.
+        QueueID (Optional[int]): Numeric ID of the queue.
+        Queue (Optional[str]): Name of the queue.
+        LockID (Optional[int]): Numeric ID of the lock status.
+        Lock (Optional[str]): Name of the lock status.
+        TypeID (Optional[int]): Numeric ID of the ticket type.
+        Type (Optional[str]): Name of the ticket type.
+        ServiceID (Optional[Union[int,str]]): Numeric or string ID of the service.
+        Service (Optional[str]): Name of the service.
+        SLAID (Optional[Union[int,str]]): Numeric or string ID of the SLA.
+        SLA (Optional[str]): Name of the SLA.
+        StateID (Optional[int]): Numeric ID of the ticket state.
+        State (Optional[str]): Name of the ticket state.
+        PriorityID (Optional[int]): Numeric ID of the priority.
+        Priority (Optional[str]): Name of the priority.
+        OwnerID (Optional[int]): Numeric ID of the ticket owner.
+        Owner (Optional[str]): User login of the ticket owner.
+        ResponsibleID (Optional[int]): Numeric ID of the responsible agent.
+        Responsible (Optional[str]): User login of the responsible agent.
+        CustomerUser (Optional[str]): Login name of the customer user.
         TicketID (Optional[int]): Unique identifier of the ticket.
         TicketNumber (Optional[str]): Human-readable ticket number.
         StateType (Optional[str]): Type of the state (e.g., 'open', 'closed').
