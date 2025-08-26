@@ -1,5 +1,8 @@
 # Python OTOBO Client Library
 
+## Links
+- [Github Repo](https://github.com/Softoft/otobo-python-client)
+- [Pypi Package](https://pypi.org/project/otobo/)
 An asynchronous Python client for interacting with the OTOBO REST API. Built with `httpx` and `pydantic` for type safety
 and ease of use.
 
