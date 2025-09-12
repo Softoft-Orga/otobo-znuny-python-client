@@ -6,6 +6,7 @@ from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 from pydantic.v1.class_validators import Validator
 
+from otobo import
 from .models.client_config_models import TicketOperation, OTOBOClientConfig
 from .models.request_models import (
     TicketSearchParams,
@@ -23,6 +24,7 @@ from .models.response_models import (
     FullTicketSearchResponse,
     TicketGetResponse,
 )
+from .models.ticket_models import TicketDetailOutput
 from .otobo_errors import OTOBOError
 from .util.http_method import HttpMethod
 
@@ -225,7 +227,7 @@ class OTOBOClient:
 
     async def search_and_get(
             self, query: TicketSearchParams
-    ) -> FullTicketSearchResponse:
+    ) -> list[TicketDetailOutput]:
         """
         Combine ticket search and retrieval in one call sequence.
 
@@ -248,7 +250,7 @@ class OTOBOClient:
                 "Both 'TicketSearch' and 'TicketGet' must be configured for search_and_get"
             )
         ids = (await self.search_tickets(query)).TicketID
-        ticket_get_responses: List[OTOBOTicketGetResponse] = [
+        ticket_get_responses: List[TicketGetResponse] = [
             await self.get_ticket(TicketGetParams(TicketID=i)) for i in ids
         ]
         return [ticket.Ticket for ticket in ticket_get_responses]
