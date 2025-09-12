@@ -83,4 +83,4 @@ fabric.properties
 *.ori
 *.orig
 *.tmp
-
+*.env
