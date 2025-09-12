@@ -162,7 +162,6 @@ def get_config_from_env() -> OTOBOClientConfig:
         TicketOperation.SEARCH: "ticket-search",
         TicketOperation.GET: "ticket-get",
         TicketOperation.UPDATE: "ticket-update",
-        TicketOperation.HISTORY_GET: "ticket-history",
     }
 
     auth = AuthData(UserLogin=user, Password=password)

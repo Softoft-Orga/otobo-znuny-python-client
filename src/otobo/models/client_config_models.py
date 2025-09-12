@@ -1,3 +1,4 @@
+import enum
 from enum import Enum
 from typing import Dict
 
@@ -21,7 +22,6 @@ class TicketOperation(Enum):
     SEARCH = "TicketSearch"
     GET = "TicketGet"
     UPDATE = "TicketUpdate"
-    HISTORY_GET = "TicketHistoryGet"
 
 
 class OTOBOClientConfig(BaseModel):
