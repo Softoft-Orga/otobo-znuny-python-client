@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Optional, Type
 
 import httpx
 from httpx import AsyncClient
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from pydantic.v1.class_validators import Validator
 
 from .models.client_config_models import TicketOperation, OTOBOClientConfig
 from .models.request_models import (
@@ -117,7 +118,11 @@ class OTOBOClient:
         json_response = resp.json()
         self._check_response(json_response)
         resp.raise_for_status()
-        return response_model.model_validate(json_response)
+        try:
+            return response_model.model_validate(json_response)
+        except ValidationError as e:
+            self._logger.error("Response validation error: %s", e)
+            return response_model.model_construct(**json_response)
 
     async def create_ticket(
             self, payload: TicketCreateParams

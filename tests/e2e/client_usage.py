@@ -6,6 +6,9 @@ import sys
 import time
 from typing import Dict, Any, Optional
 
+# Add this import
+from dotenv import load_dotenv
+
 from otobo import (
     OTOBOClient,
     OTOBOClientConfig,
@@ -47,9 +50,10 @@ class OTOBOTextExecutor:
         payload_create = TicketCreateParams(
             Ticket=TicketCommon(
                 Title=title,
-                Queue="Raw",
-                State="new",
-                Priority="3 normal",
+                Queue="test",
+                State="neu",
+                Priority="3 Mittel",
+                Type="Ticket",
                 CustomerUser="customer@localhost.de",
             ),
             Article=ArticleDetail(
@@ -63,7 +67,7 @@ class OTOBOTextExecutor:
         res_create = await self.client.create_ticket(payload_create)
         logger.debug("Create Ticket Response: %s", res_create)
         self.ticket_number = res_create.TicketNumber
-        self.ticket_id = res_create.TicketID
+        self.ticket_id = int(res_create.TicketID)
         logger.info("Created ticket_number: %s", self.ticket_number)
 
     async def search_ticket(self) -> None:
@@ -71,12 +75,11 @@ class OTOBOTextExecutor:
         Searches for the created ticket.
         """
         logger.info("Searching for the ticket...")
-        query_search = TicketSearchParams(QueueIDs=[1])
+        query_search = TicketSearchParams(Queues=["test"])
         ticket_search_response = await self.client.search_tickets(query_search)
         logger.info("Search returned IDs: %s", ticket_search_response)
         # Add a simple check
         assert self.ticket_id in ticket_search_response.TicketID, "The created ticket was not found"
-
 
     async def get_ticket_details(self) -> None:
         """
@@ -96,7 +99,7 @@ class OTOBOTextExecutor:
         payload_update = TicketUpdateParams(
             TicketID=self.ticket_id,
             Ticket=TicketCommon(
-                State="closed successful",
+                State="geschlossen",
             ),
         )
         res_update = await self.client.update_ticket(payload_update)
@@ -118,13 +121,14 @@ class OTOBOTextExecutor:
         Performs a combined search and get operation.
         """
         logger.info("Performing search_and_get...")
-        query_search = TicketSearchParams(QueueIDs=[1])
+        query_search = TicketSearchParams(Queues=["test"])
         combined = await self.client.search_and_get(query_search)
         if combined and isinstance(combined, list):
             logger.info("search_and_get result %s", combined)
         else:
             logger.error("search_and_get did not return expected data")
             sys.exit(1)
+
 
     async def run_full_test_flow(self) -> None:
         """
@@ -145,20 +149,20 @@ def get_config_from_env() -> OTOBOClientConfig:
     """
     base_url = os.environ.get("OTOBO_BASE_URL")
     service = os.environ.get("OTOBO_SERVICE")
-    user = os.environ.get("OTOBO_USER")
-    password = os.environ.get("OTOBO_PASSWORD")
+    user = os.environ.get("OTOBO_TEST_USER")
+    password = os.environ.get("OTOBO_TEST_PASSWORD")
 
     if not all([base_url, service, user, password]):
-        logger.error("Please set the OTOBO_BASE_URL, OTOBO_SERVICE, OTOBO_USER, and OTOBO_PASSWORD environment variables.")
+        logger.error(
+            "Please set the OTOBO_BASE_URL, OTOBO_SERVICE, OTOBO_USER, and OTOBO_PASSWORD environment variables.")
         sys.exit(1)
 
-
-    operations: Dict[str, Any] = {
-        TicketOperation.CREATE.value: "ticket",
-        TicketOperation.SEARCH.value: "ticket/search",
-        TicketOperation.GET.value: "ticket/get",
-        TicketOperation.UPDATE.value: "ticket",
-        TicketOperation.HISTORY_GET.value: "ticket/history",
+    operations: dict[TicketOperation, str] = {
+        TicketOperation.CREATE: "ticket-create",
+        TicketOperation.SEARCH: "ticket-search",
+        TicketOperation.GET: "ticket-get",
+        TicketOperation.UPDATE: "ticket-update",
+        TicketOperation.HISTORY_GET: "ticket-history",
     }
 
     auth = AuthData(UserLogin=user, Password=password)
@@ -174,6 +178,9 @@ async def main():
     """
     Main function to run the OTOBO test executor.
     """
+    # Load environment variables from .env file
+    load_dotenv()
+
     config = get_config_from_env()
     executor = OTOBOTextExecutor(config)
     await executor.run_full_test_flow()
