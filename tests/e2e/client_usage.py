@@ -47,10 +47,10 @@ class OTOBOTestExecutor:
         payload_create = TicketCreateParams(
             Ticket=TicketCommon(
                 Title=title,
-                Queue="test",
-                State="neu",
-                Priority="3 Mittel",
-                Type="Ticket",
+                Queue="Raw",
+                State="new",
+                Priority="3 normal",
+                Type="Incident",
                 CustomerUser="customer@localhost.de",
             ),
             Article=ArticleDetail(
@@ -72,7 +72,7 @@ class OTOBOTestExecutor:
         Searches for the created ticket.
         """
         logger.info("Searching for the ticket...")
-        query_search = TicketSearchRequest(Queues=["test"])
+        query_search = TicketSearchRequest(Queues=["Raw"])
         ticket_search_response = await self.client.search_tickets(query_search)
         logger.info("Search returned IDs: %s", ticket_search_response)
         # Add a simple check
@@ -96,7 +96,7 @@ class OTOBOTestExecutor:
         payload_update = TicketUpdateRequest(
             TicketID=self.ticket_id,
             Ticket=TicketBase(
-                State="geschlossen",
+                Queue="Junk"
             ),
         )
         res_update = await self.client.update_ticket(payload_update)
