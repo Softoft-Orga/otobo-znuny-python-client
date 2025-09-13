@@ -1,0 +1,151 @@
+---
+Debugger:
+  DebugThreshold: debug
+  TestMode: '0'
+Description: Webservice for 'OpenTicketAI'. Restricted to user 'openticketai_ws'.
+FrameworkVersion: 11.0.0
+Provider:
+  Transport:
+    Type: HTTP::REST
+    Config:
+      MaxLength: '1000000'
+      KeepAlive: ''
+      AdditionalHeaders: ''
+      RouteOperationMapping:
+        ticket-get:
+          Route: /ticket-get
+          RequestMethod:
+          - GET
+          ParserBackend: JSON
+        ticket-search:
+          Route: /ticket-search
+          RequestMethod:
+          - POST
+          ParserBackend: JSON
+        ticket-create:
+          Route: /ticket-create
+          RequestMethod:
+          - POST
+          ParserBackend: JSON
+        ticket-update:
+          Route: /ticket-update
+          RequestMethod:
+          - PUT
+          ParserBackend: JSON
+  Operation:
+    ticket-get:
+      Type: Ticket::TicketGet
+      Description: Retrieves ticket information by ID.
+      IncludeTicketData: '0'
+      MappingInbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapType: Keep
+            MapTo: ''
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: openticketai_ws
+          ValueMapDefault:
+            MapType: Keep
+            MapTo: ''
+      MappingOutbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+    ticket-search:
+      Type: Ticket::TicketSearch
+      Description: Searches for tickets based on specified criteria.
+      IncludeTicketData: '0'
+      MappingInbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapType: Keep
+            MapTo: ''
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: openticketai_ws
+          ValueMapDefault:
+            MapType: Keep
+            MapTo: ''
+      MappingOutbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+    ticket-create:
+      Type: Ticket::TicketCreate
+      Description: Creates a new ticket.
+      IncludeTicketData: '1'
+      MappingInbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapType: Keep
+            MapTo: ''
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: openticketai_ws
+          ValueMapDefault:
+            MapType: Keep
+            MapTo: ''
+      MappingOutbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+    ticket-update:
+      Type: Ticket::TicketUpdate
+      Description: Updates an existing ticket.
+      IncludeTicketData: '1'
+      MappingInbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapType: Keep
+            MapTo: ''
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: openticketai_ws
+          ValueMapDefault:
+            MapType: Keep
+            MapTo: ''
+      MappingOutbound:
+        Type: Simple
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+RemoteSystem: ''
+Requester:
+  Transport:
+    Type: ''

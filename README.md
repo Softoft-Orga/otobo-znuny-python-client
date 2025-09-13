@@ -21,7 +21,6 @@ and ease of use.
     * `TicketSearch`
     * `TicketGet`
     * `TicketUpdate`
-    * `TicketHistoryGet`
 * **Error handling** via `OTOBOError` for API errors
 * Utility method `search_and_get` to combine search results with detailed retrieval
 
@@ -37,6 +36,18 @@ pip install otobo
 ## Quickstart
 
 ### Setup OTOBO Webservices:
+
+
+````bash
+# Install with uv (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install otobo
+otobo setup
+
+# Update later
+uv tool upgrade otobo
+
+````
 
 Create a new web service in OTOBO with the following configuration:
 

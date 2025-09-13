@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional
 # Add this import
 from dotenv import load_dotenv
 
+from models.ticket_models import TicketBase
 from otobo import (
     OTOBOClient,
     OTOBOClientConfig,
@@ -26,7 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger("integration_demo")
 
 
-class OTOBOTextExecutor:
+class OTOBOTestExecutor:
     """
     A class to encapsulate the OTOBO client and the testing flow.
     """
@@ -94,7 +95,7 @@ class OTOBOTextExecutor:
         logger.info("Updating the ticket state to 'closed'...")
         payload_update = TicketUpdateRequest(
             TicketID=self.ticket_id,
-            Ticket=TicketCommon(
+            Ticket=TicketBase(
                 State="geschlossen",
             ),
         )
@@ -102,15 +103,6 @@ class OTOBOTextExecutor:
         logger.info("Updated Ticket Response: %s", res_update)
         logger.info("Updated TicketID: %s", res_update.TicketID)
 
-    async def get_ticket_history(self) -> None:
-        """
-        Retrieves the history of the created ticket.
-        """
-        logger.info("Retrieving ticket history...")
-        payload_history = TicketHistoryParams(TicketID=str(self.ticket_id))
-        res_history = await self.client.get_ticket_history(payload_history)
-        logger.info("Ticket History Data: %s", res_history)
-        logger.info("History Entries: %s", res_history.TicketHistory)
 
     async def search_and_get_combined(self) -> None:
         """
@@ -134,7 +126,6 @@ class OTOBOTextExecutor:
         await self.search_ticket()
         await self.get_ticket_details()
         await self.update_ticket()
-        await self.get_ticket_history()
         await self.search_and_get_combined()
         logger.info("Integration demo complete successfully.")
 
@@ -176,8 +167,8 @@ async def main():
     # Load environment variables from .env file
     load_dotenv()
 
-    config = get_config_from_env()
-    executor = OTOBOTextExecutor(config)
+    otobo_client_config = get_config_from_env()
+    executor = OTOBOTestExecutor(otobo_client_config)
     await executor.run_full_test_flow()
 
 
