@@ -6,6 +6,11 @@
 An asynchronous Python client for interacting with the OTOBO REST API. Built with `httpx` and `pydantic` for type safety
 and ease of use.
 
+## Documentation
+
+- [Getting started (English)](docs/getting-started.en.md)
+- [Einstieg (Deutsch)](docs/getting-started.de.md)
+
 ## Features
 
 * **Asynchronous** HTTP requests using `httpx.AsyncClient`
