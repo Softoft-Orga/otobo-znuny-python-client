@@ -14,13 +14,9 @@ from otobo import (
     OTOBOClientConfig,
     TicketOperation,
     AuthData,
-    TicketCreateParams,
     TicketSearchParams,
     TicketGetParams,
     TicketUpdateParams,
-    TicketHistoryParams,
-    TicketCommon,
-    ArticleDetail,
 )
 
 # --- Setup Logging ---
