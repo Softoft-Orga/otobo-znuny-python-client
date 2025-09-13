@@ -10,18 +10,23 @@ from .request_models import AuthData
 class TicketOperation(Enum):
     """
     Enumeration of supported ticket operations in the OTOBO Webservice API.
-
-    Members:
-        CREATE:       Create a new ticket (TicketCreate).
-        SEARCH:       Search for existing tickets (TicketSearch).
-        GET:          Retrieve a specific ticket by ID (TicketGet).
-        UPDATE:       Update fields of an existing ticket (TicketUpdate).
-        HISTORY_GET:  Fetch the history entries for a ticket (TicketHistoryGet).
+    Each member stores both the OTOBO short name and the Type string.
     """
-    CREATE = "TicketCreate"
-    SEARCH = "TicketSearch"
-    GET = "TicketGet"
-    UPDATE = "TicketUpdate"
+    CREATE = ("TicketCreate", "Ticket::TicketCreate")
+    SEARCH = ("TicketSearch", "Ticket::TicketSearch")
+    GET = ("TicketGet", "Ticket::TicketGet")
+    UPDATE = ("TicketUpdate", "Ticket::TicketUpdate")
+
+    def __new__(cls, name: str, operation_type: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.operation_type = operation_type
+        return obj
+
+    @property
+    def type(self) -> str:
+        """Return the OTOBO 'Type' string, e.g. 'Ticket::TicketCreate'."""
+        return self.operation_type
 
 
 class OTOBOClientConfig(BaseModel):
@@ -56,4 +61,45 @@ class OTOBOClientConfig(BaseModel):
             "Mapping of operation keys to endpoint names, "
             "e.g. {TicketOperation.CREATE: 'ticket-create', ...}"
         )
+    )
+
+
+from pathlib import Path
+from typing import Dict, Any
+import yaml
+from .request_models import AuthData
+
+TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
+
+
+def _read_yaml(path: str | Path) -> Dict[str, Any]:
+    return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+
+
+def _extract_operations_by_type(ws: Dict[str, Any]) -> Dict[TicketOperation, str]:
+    ops = ws.get("Provider", {}).get("Operation", {}) or {}
+    result: Dict[TicketOperation, str] = {}
+    for endpoint_name, cfg in ops.items():
+        type_str = str((cfg or {}).get("Type", "")).strip()
+        enum_key = TYPE_TO_ENUM.get(type_str)
+        if enum_key:
+            result[enum_key] = str(endpoint_name)
+    return result
+
+
+def create_otobo_client_config(
+        webservice_yaml_path: str | Path,
+        base_url: str,
+        auth: AuthData,
+        service: str,
+) -> OTOBOClientConfig:
+    data = _read_yaml(webservice_yaml_path)
+    operations = _extract_operations_by_type(data)
+    if not operations:
+        raise ValueError("No supported ticket operations found in webservice YAML.")
+    return OTOBOClientConfig(
+        base_url=base_url,
+        service=service,
+        auth=auth,
+        operations=operations,
     )

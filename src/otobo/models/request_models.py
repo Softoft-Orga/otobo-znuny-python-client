@@ -24,7 +24,6 @@ class TicketSearchParams(BaseModel):
     """
     Search filters for querying tickets via OTOBO Webservice.
 
-    DynamicFields are remapped to 'DynamicField_<name>' in model_dump override.
     Attributes:
             TicketNumber: Optional[Union[str, List[str]]] = None
             Title: Optional[Union[str, List[str]]] = None
@@ -42,7 +41,7 @@ class TicketSearchParams(BaseModel):
     Title: Optional[Union[str, List[str]]] = None
     Queues: Optional[List[str]] = None
     QueueIDs: Optional[List[int]] = None
-    UseSubQueues: Optional[bool] = None
+    UseSubQueues: Optional[bool] = False
     Types: Optional[List[str]] = None
     TypeIDs: Optional[List[int]] = None
     States: Optional[List[str]] = None

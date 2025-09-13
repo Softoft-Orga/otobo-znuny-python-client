@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union, Iterable
 
 import httpx
 from httpx import AsyncClient
@@ -13,13 +13,13 @@ from .models.request_models import (
     TicketGetParams,
 )
 from .models.response_models import (
-    TicketUpdateResponse,
     TicketSearchResponse,
-    TicketGetResponse, TicketCreateResponse,
+    TicketGetResponse, TicketResponse,
 )
 from .models.ticket_models import TicketDetailOutput, TicketDetailInput
 from .otobo_errors import OTOBOError
 from http import HTTPMethod
+
 
 class OTOBOClient:
     """
@@ -51,20 +51,19 @@ class OTOBOClient:
         """
         return f"{self.base_url}/Webservice/{self.service}/{endpoint}"
 
-    def _check_operation_registered(self, op_key: TicketOperation) -> None:
-        """
-        Verify that the specified operation is registered in the client configuration.
+    def _check_operation_registered(
+            self,
+            op_keys: Union[TicketOperation, Iterable[TicketOperation]]
+    ) -> None:
+        if isinstance(op_keys, (list, tuple, set)):
+            missing = [op for op in op_keys if op not in self.config.operations]
+            if missing:
+                raise RuntimeError(f"Operations not configured in OTOBOClientConfig: {missing}")
+        else:
+            if op_keys not in self.config.operations:
+                raise RuntimeError(f"Operation '{op_keys}' is not configured in OTOBOClientConfig")
 
-        Args:
-            op_key (TicketOperation): Operation enum key to check.
-
-        Raises:
-            RuntimeError: If the operation is not defined in config.operations.
-        """
-        if op_key not in self.config.operations:
-            raise RuntimeError(f"Operation '{op_key}' is not configured in OTOBOClientConfig")
-
-    def _check_response(self, response: Dict[str, Any]) -> None:
+    def _check_response(self, response: httpx.Response) -> None:
         """
         Inspect the JSON response for an error and raise if present.
 
@@ -74,25 +73,27 @@ class OTOBOClient:
         Raises:
             OTOBOError: If the response contains an 'Error' key with details.
         """
-        if "Error" in response:
-            err = response["Error"]
-            raise OTOBOError(err["ErrorCode"], err["ErrorMessage"])
+        response_json = response.json()
+        if "Error" in response_json:
+            err = response_json["Error"]
+            raise OTOBOError(err.get("ErrorCode", ""), err.get("ErrorMessage", ""))
+        response.raise_for_status()
 
-    async def _call[
+    async def _request[
     T: BaseModel
     ](
             self,
-            method: HTTPMethod,
-            op_key: TicketOperation,
-            response_model: Type[T],
-            data: Optional[Dict[str, Any]] = None,
+            http_method: HTTPMethod,
+            ticket_operation: TicketOperation,
+            response_model: type[T],
+            data: Optional[dict[str, Any]] = None,
     ) -> T:
         """
         Internal helper to perform an HTTP request to an OTOBO Webservice endpoint.
 
         Args:
-            method (HttpMethod): HTTP method enum for the request.
-            op_key (TicketOperation): Operation enum to determine URL path.
+            http_method (HttpMethod): HTTP method enum for the request.
+            ticket_operation (TicketOperation): Operation enum to determine URL path.
             response_model (Type[T]): Pydantic model for validating the response.
             data (Dict[str, Any], optional): Payload to send in the request body. Defaults to None.
 
@@ -104,23 +105,21 @@ class OTOBOClient:
             OTOBOError: If the response JSON contains an error.
             httpx.HTTPError: For network or HTTP-level errors.
         """
-        self._check_operation_registered(op_key)
-        url = self._build_url(self.config.operations[op_key])
-        headers = {'Content-Type': 'application/json'}
-        payload: Dict[str, Any] = self.auth.model_dump(exclude_none=True) | (data or {})
-        resp = await self._client.request(str(method.value), url, json=payload, headers=headers)
-        json_response = resp.json()
-        self._check_response(json_response)
-        resp.raise_for_status()
+        self._check_operation_registered(ticket_operation)
+        url = self._build_url(self.config.operations[ticket_operation])
+        payload: dict[str, Any] = self.auth.model_dump(exclude_none=True) | (data or {})
+        resp = await self._client.request(str(http_method.value), url, json=payload,
+                                          headers={'Content-Type': 'application/json'})
+        self._check_response(resp)
         try:
-            return response_model.model_validate(json_response)
+            return response_model.model_validate(resp.json())
         except ValidationError as e:
             self._logger.error("Response validation error: %s", e)
-            return response_model.model_construct(**json_response)
+            return response_model.model_construct(**(resp.json()))
 
     async def create_ticket(
             self, payload: TicketDetailInput
-    ) -> TicketCreateResponse:
+    ) -> TicketDetailOutput:
         """
         Create a new ticket in OTOBO.
 
@@ -130,12 +129,14 @@ class OTOBOClient:
         Returns:
             OTOBOTicketCreateResponse: Response model with created ticket details.
         """
-        return await self._call(
+        response: TicketResponse = await self._request(
             HTTPMethod.POST,
             TicketOperation.CREATE,
-            TicketCreateResponse,
+            TicketResponse,
             data=payload.model_dump(exclude_none=True),
         )
+
+        return response.Ticket
 
     async def get_ticket(self, params: TicketGetParams) -> TicketDetailOutput:
         """
@@ -150,7 +151,7 @@ class OTOBOClient:
         Raises:
             AssertionError: If the response does not contain exactly one ticket.
         """
-        otobo_ticket_get_response  = await self._call(
+        otobo_ticket_get_response = await self._request(
             HTTPMethod.POST,
             TicketOperation.GET,
             TicketGetResponse,
@@ -162,7 +163,7 @@ class OTOBOClient:
 
     async def update_ticket(
             self, payload: TicketUpdateParams
-    ) -> TicketUpdateResponse:
+    ) -> TicketDetailOutput:
         """
         Update an existing ticket's fields.
 
@@ -172,16 +173,19 @@ class OTOBOClient:
         Returns:
             TicketUpdateResponse: Response model with update result status.
         """
-        return await self._call(
+        response: TicketResponse = await self._request(
             HTTPMethod.PUT,
             TicketOperation.UPDATE,
-            TicketUpdateResponse,
+            TicketResponse,
             data=payload.model_dump(exclude_none=True),
         )
+        if response.Ticket is not None:
+            return response.Ticket
+        raise RuntimeError("Update operation did not return updated ticket details")
 
     async def search_tickets(
             self, query: TicketSearchParams
-    ) -> TicketSearchResponse:
+    ) -> list[int]:
         """
         Search for tickets matching given criteria.
 
@@ -189,21 +193,21 @@ class OTOBOClient:
             query (TicketSearchParams): Search filters and options.
 
         Returns:
-            TicketSearchResponse: Response model with list of matching TicketIDs.
+            List[int]: List of TicketIDs matching the search criteria.
         """
-        return await self._call(
+        response: TicketSearchResponse = await self._request(
             HTTPMethod.POST,
             TicketOperation.SEARCH,
             TicketSearchResponse,
             data=query.model_dump(exclude_none=True),
         )
+        return response.TicketIDs
 
     async def search_and_get(
             self, query: TicketSearchParams
     ) -> list[TicketDetailOutput]:
         """
         Combine ticket search and retrieval in one call sequence.
-
         Performs a search to retrieve TicketIDs, then fetches each ticket's details.
 
         Args:
@@ -213,17 +217,10 @@ class OTOBOClient:
             FullTicketSearchResponse: List of Ticket objects matching the search criteria.
 
         Raises:
-            RuntimeError: If SEARCH or GET operations are not configured in the client.
+            RuntimeError: If SEARCH or GET operations arent configured in the client.
         """
-        if (
-                TicketOperation.SEARCH not in self.config.operations
-                or TicketOperation.GET not in self.config.operations
-        ):
-            raise RuntimeError(
-                "Both 'TicketSearch' and 'TicketGet' must be configured for search_and_get"
-            )
-        ids = (await self.search_tickets(query)).TicketID
+        self._check_operation_registered([TicketOperation.SEARCH, TicketOperation.GET])
         ticket_get_responses_tasks = [
-            self.get_ticket(TicketGetParams(TicketID=i)) for i in ids
+            self.get_ticket(TicketGetParams(TicketID=i)) for i in await self.search_tickets(query)
         ]
         return await asyncio.gather(*ticket_get_responses_tasks)
