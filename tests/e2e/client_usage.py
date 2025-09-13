@@ -74,7 +74,7 @@ class OTOBOTestExecutor:
         ticket_search_response = await self.client.search_tickets(query_search)
         logger.info("Search returned IDs: %s", ticket_search_response)
         # Add a simple check
-        assert self.ticket_id in ticket_search_response.TicketID, "The created ticket was not found"
+        assert self.ticket_id in ticket_search_response, "The created ticket was not found"
 
     async def get_ticket_details(self) -> None:
         """
@@ -134,14 +134,17 @@ def get_config_from_env() -> OTOBOClientConfig:
     """
     base_url = os.environ.get("OTOBO_BASE_URL")
     service = os.environ.get("OTOBO_SERVICE")
-    user = os.environ.get("OTOBO_TEST_USER")
-    password = os.environ.get("OTOBO_TEST_PASSWORD")
+    user = os.environ.get("OTOBO_DEMO_USER")
+    password = os.environ.get("OTOBO_DEMO_PASSWORD")
 
     if not all([base_url, service, user, password]):
         logger.error(
             "Please set the OTOBO_BASE_URL, OTOBO_SERVICE, OTOBO_USER, and OTOBO_PASSWORD environment variables.")
         sys.exit(1)
-
+    logger.info("Using OTOBO_BASE_URL: %s", base_url)
+    logger.info("Using OTOBO_SERVICE: %s", service)
+    logger.info("Using OTOBO_USER: %s", user)
+    logger.info("Using OTOBO_PASSWORD: %s", password)
     operations: dict[TicketOperation, str] = {
         TicketOperation.CREATE: "ticket-create",
         TicketOperation.SEARCH: "ticket-search",

@@ -87,7 +87,7 @@ class TicketCreateRequest(BaseModel):
     Model for creating or updating a ticket, includes optional details.
 
     Attributes:
-        Ticket (Optional[TicketCommon]): Core ticket fields to set.
+        Ticket (Optional[TicketBase]): Core ticket fields to set.
         Article (Optional[Union[ArticleDetail,List[ArticleDetail]]]): Article(s) to attach.
         DynamicField (Optional[List[DynamicFieldItem]]): Dynamic fields to set.
     """

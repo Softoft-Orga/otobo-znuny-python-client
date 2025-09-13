@@ -31,7 +31,7 @@ class WebServiceGenerator:
             "name": "ticket-get",
             "type": "Ticket::TicketGet",
             "description": "Retrieves ticket information by ID.",
-            "methods": ["GET"],
+            "methods": ["POST"],
             "include_ticket_data": "0",
         },
         "TicketSearch": {

@@ -205,7 +205,7 @@ class OTOBOClient:
             TicketSearchResponse,
             data=query.model_dump(exclude_none=True),
         )
-        return response.TicketIDs
+        return response.TicketID
 
     async def search_and_get(
             self, query: TicketSearchRequest

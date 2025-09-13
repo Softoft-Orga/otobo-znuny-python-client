@@ -30,6 +30,8 @@ class TicketBase(BaseModel):
     CustomerUser: Optional[str] = None
     TicketID: Optional[int] = None
     TicketNumber: Optional[str] = None
+    Type: Optional[str] = None
+    TypeID: Optional[int] = None
     CustomerID: Optional[str] = None
     CustomerUserID: Optional[str] = None
     CreateBy: Optional[int] = None
