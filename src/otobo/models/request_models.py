@@ -2,19 +2,9 @@ from typing import Optional, Union, List, Dict, Literal
 
 from pydantic import BaseModel, Field
 
-"""Pydantic models for request payloads sent to the OTOBO API.
+"""Pydantic models for request payloads sent to the OTOBO API."""
 
-This module lives inside the :mod:`otobo` package which follows the
-``src`` layout.  When the test-suite tries to import these models without
-installing the package, absolute imports like ``from models.ticket_models``
-break because Python cannot resolve the top-level ``models`` package.
-
-Using explicit relative imports keeps the package self contained and makes
-it possible to run the tests directly from the repository without an
-installation step.
-"""
-
-from .ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
+from otobo.models.ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
 
 
 class AuthData(BaseModel):

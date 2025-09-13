@@ -1,5 +1,4 @@
-from models.ticket_models import DynamicFieldItem
-from src.otobo import ArticleDetail
+from otobo.models.ticket_models import DynamicFieldItem, ArticleDetail
 
 Ticket = [TicketDetail(TicketID=12, TicketNumber='2024100201000065',
         Title='ticket - <OTOBO_TICKET_DynamicField_customerUserIHKAbteilung_Value>',

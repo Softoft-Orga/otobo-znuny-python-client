@@ -13,11 +13,11 @@ from otobo import (
     OTOBOClient,
     OTOBOClientConfig,
     TicketOperation,
-    AuthData,
     TicketSearchRequest,
     TicketGetRequest,
     TicketUpdateRequest,
 )
+from otobo.models.request_models import AuthData
 
 # --- Setup Logging ---
 logging.basicConfig(

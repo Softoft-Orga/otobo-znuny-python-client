@@ -3,7 +3,9 @@ from pathlib import Path
 import textwrap
 from typing import Dict
 
-from otobo import AuthData, create_otobo_client_config, OTOBOClientConfig, TicketOperation
+from otobo.models.request_models import AuthData
+from otobo.util.webservice_config import create_otobo_client_config
+from otobo.models.client_config_models import OTOBOClientConfig, TicketOperation
 
 
 def _write(tmp_path: Path, name: str, content: str) -> Path:

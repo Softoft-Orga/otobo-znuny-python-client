@@ -1,27 +1,26 @@
 import json
-import sys
-from pathlib import Path
 
 import httpx
 import pytest
 import pytest_asyncio
 from http import HTTPMethod
 
-# Ensure the package uses its expected import layout
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src/otobo"))
-
-from client.otobo_client import OTOBOClient
-from models.client_config_models import OTOBOClientConfig, TicketOperation
-from models.request_models import (
+from otobo.client.otobo_client import OTOBOClient
+from otobo.models.client_config_models import OTOBOClientConfig, TicketOperation
+from otobo.models.request_models import (
     AuthData,
     TicketCreateRequest,
     TicketGetRequest,
     TicketSearchRequest,
     TicketUpdateRequest,
 )
-from models.response_models import TicketGetResponse, TicketResponse, TicketSearchResponse
-from models.ticket_models import TicketDetailOutput
-from util.otobo_errors import OTOBOError
+from otobo.models.response_models import (
+    TicketGetResponse,
+    TicketResponse,
+    TicketSearchResponse,
+)
+from otobo.models.ticket_models import TicketDetailOutput
+from otobo.util.otobo_errors import OTOBOError
 
 
 @pytest.fixture
