@@ -2,7 +2,18 @@ from pathlib import Path
 from typing import Dict, Any
 import yaml
 
-from otobo import TicketOperation, AuthData, OTOBOClientConfig
+"""Utilities for reading OTOBO Webservice configuration files.
+
+The original implementation imported from the top-level :mod:`otobo`
+package.  This caused a circular import when :mod:`otobo.__init__` tried to
+expose :func:`create_otobo_client_config` while this module simultaneously
+imported from :mod:`otobo`.  Using relative imports resolves the cycle and
+keeps the module usable when the package is imported directly from the
+source tree.
+"""
+
+from ..models.client_config_models import TicketOperation, OTOBOClientConfig
+from ..models.request_models import AuthData
 
 TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
 
