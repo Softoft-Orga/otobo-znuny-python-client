@@ -6,31 +6,22 @@ import httpx
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 
-"""Asynchronous client implementation for the OTOBO REST API.
+"""Asynchronous client implementation for the OTOBO REST API."""
 
-The original project used absolute imports such as ``from models...`` which
-assumed the package had been installed.  When running the tests directly
-from the source tree this resulted in ``ImportError`` because Python could
-not resolve the top level modules.  The client now uses explicit relative
-imports to reference sibling modules within the :mod:`otobo` package.  This
-allows the test-suite to import the package without performing an
-installation step.
-"""
-
-from ..models.client_config_models import TicketOperation, OTOBOClientConfig
-from ..models.request_models import (
+from otobo.models.client_config_models import TicketOperation, OTOBOClientConfig
+from otobo.models.request_models import (
     TicketSearchRequest,
     TicketUpdateRequest,
     TicketGetRequest,
     TicketCreateRequest,
 )
-from ..models.response_models import (
+from otobo.models.response_models import (
     TicketSearchResponse,
     TicketGetResponse,
     TicketResponse,
 )
-from ..models.ticket_models import TicketDetailOutput
-from ..util.otobo_errors import OTOBOError
+from otobo.models.ticket_models import TicketDetailOutput
+from otobo.util.otobo_errors import OTOBOError
 from http import HTTPMethod
 
 

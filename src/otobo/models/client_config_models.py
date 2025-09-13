@@ -4,7 +4,7 @@ from typing import Dict
 
 from pydantic import BaseModel, Field
 
-from .request_models import AuthData
+from otobo.models.request_models import AuthData
 
 
 class TicketOperation(Enum):
