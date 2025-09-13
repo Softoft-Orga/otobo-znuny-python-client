@@ -1,4 +1,5 @@
-OTOBO_BASE_URL=""http://52.57.217.182/otobo/nph-genericinterface.pl"
+OTOBO_BASE_URL="http://52.57.217.182/otobo/nph-genericinterface.pl"
 OTOBO_SERVICE="OpenTicketAI"
 OTOBO_TEST_USER="openticketai_ws"
 OTOBO_TEST_PASSWORD="SqCXLWGqq6H2Cou0aa8U"
+

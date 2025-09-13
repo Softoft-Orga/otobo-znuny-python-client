@@ -4,12 +4,10 @@ import logging
 import os
 import sys
 import time
-from typing import Dict, Any, Optional
+from typing import Optional
 
-# Add this import
 from dotenv import load_dotenv
 
-from models.ticket_models import TicketBase
 from otobo import (
     OTOBOClient,
     OTOBOClientConfig,
@@ -17,8 +15,10 @@ from otobo import (
     TicketSearchRequest,
     TicketGetRequest,
     TicketUpdateRequest,
+    TicketCreateRequest,
 )
 from otobo.models.request_models import AuthData
+from otobo.models.ticket_models import TicketBase, ArticleDetail
 
 # --- Setup Logging ---
 logging.basicConfig(
@@ -44,8 +44,8 @@ class OTOBOTestExecutor:
         logger.info("Creating a new ticket...")
         ts = int(time.time())
         title = f"TestTicket {ts}"
-        payload_create = TicketCreateParams(
-            Ticket=TicketCommon(
+        payload_create = TicketCreateRequest(
+            Ticket=TicketBase(
                 Title=title,
                 Queue="Raw",
                 State="new",
@@ -54,11 +54,9 @@ class OTOBOTestExecutor:
                 CustomerUser="customer@localhost.de",
             ),
             Article=ArticleDetail(
-                CommunicationChannel="Email",
-                Charset="utf-8",
                 Subject="Integration Test",
                 Body="This is a test",
-                MimeType="text/plain",
+                ContentType="text/plain; charset=utf-8",
             ),
         )
         res_create = await self.client.create_ticket(payload_create)
@@ -109,7 +107,7 @@ class OTOBOTestExecutor:
         Performs a combined search and get operation.
         """
         logger.info("Performing search_and_get...")
-        query_search = TicketSearchRequest(Queues=["test"])
+        query_search = TicketSearchRequest(Queues=["Raw"])
         combined = await self.client.search_and_get(query_search)
         if combined and isinstance(combined, list):
             logger.info("search_and_get result %s", combined)
@@ -164,8 +162,8 @@ async def main():
     """
     Main function to run the OTOBO test executor.
     """
-    # Load environment variables from .env file
-    load_dotenv()
+    # Load environment variables from the demo system environment file
+    load_dotenv(os.path.join(os.path.dirname(__file__), "demo_system_env"))
 
     otobo_client_config = get_config_from_env()
     executor = OTOBOTestExecutor(otobo_client_config)
