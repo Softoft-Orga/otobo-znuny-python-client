@@ -2,7 +2,7 @@ from typing import Optional, Union, List, Dict, Literal
 
 from pydantic import BaseModel, Field
 
-from .ticket_models import TicketDetailInput
+from models.ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
 
 
 class AuthData(BaseModel):
@@ -20,7 +20,7 @@ class AuthData(BaseModel):
 
 
 
-class TicketSearchParams(BaseModel):
+class TicketSearchRequest(BaseModel):
     """
     Search filters for querying tickets via OTOBO Webservice.
 
@@ -52,7 +52,7 @@ class TicketSearchParams(BaseModel):
 
 
 
-class TicketGetParams(BaseModel):
+class TicketGetRequest(BaseModel):
     """
     Parameters for retrieving a ticket by ID with optional article and attachment controls.
 
@@ -80,8 +80,21 @@ class TicketGetParams(BaseModel):
     HTMLBodyAsAttachment: int = 1
 
 
+class TicketCreateRequest(BaseModel):
+    """
+    Model for creating or updating a ticket, includes optional details.
 
-class TicketUpdateParams(TicketDetailInput):
+    Attributes:
+        Ticket (Optional[TicketCommon]): Core ticket fields to set.
+        Article (Optional[Union[ArticleDetail,List[ArticleDetail]]]): Article(s) to attach.
+        DynamicField (Optional[List[DynamicFieldItem]]): Dynamic fields to set.
+    """
+    Ticket: Optional[TicketBase] = None
+    Article: Optional[Union[ArticleDetail, List[ArticleDetail]]] = None
+    DynamicField: Optional[List[DynamicFieldItem]] = None
+
+
+class TicketUpdateRequest(TicketCreateRequest):
     """
     Parameters for updating an existing ticket, extends TicketDetailInput.
 

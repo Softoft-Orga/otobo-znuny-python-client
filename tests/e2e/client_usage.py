@@ -14,9 +14,9 @@ from otobo import (
     OTOBOClientConfig,
     TicketOperation,
     AuthData,
-    TicketSearchParams,
-    TicketGetParams,
-    TicketUpdateParams,
+    TicketSearchRequest,
+    TicketGetRequest,
+    TicketUpdateRequest,
 )
 
 # --- Setup Logging ---
@@ -71,7 +71,7 @@ class OTOBOTextExecutor:
         Searches for the created ticket.
         """
         logger.info("Searching for the ticket...")
-        query_search = TicketSearchParams(Queues=["test"])
+        query_search = TicketSearchRequest(Queues=["test"])
         ticket_search_response = await self.client.search_tickets(query_search)
         logger.info("Search returned IDs: %s", ticket_search_response)
         # Add a simple check
@@ -83,7 +83,7 @@ class OTOBOTextExecutor:
         """
         logger.info("Retrieving ticket details...")
         res_get = await self.client.get_ticket(
-            TicketGetParams(TicketID=self.ticket_id, AllArticles=1)
+            TicketGetRequest(TicketID=self.ticket_id, AllArticles=1)
         )
         logger.info("Ticket Data: %s", res_get)
 
@@ -92,7 +92,7 @@ class OTOBOTextExecutor:
         Updates the state of the created ticket to 'closed'.
         """
         logger.info("Updating the ticket state to 'closed'...")
-        payload_update = TicketUpdateParams(
+        payload_update = TicketUpdateRequest(
             TicketID=self.ticket_id,
             Ticket=TicketCommon(
                 State="geschlossen",
@@ -117,7 +117,7 @@ class OTOBOTextExecutor:
         Performs a combined search and get operation.
         """
         logger.info("Performing search_and_get...")
-        query_search = TicketSearchParams(Queues=["test"])
+        query_search = TicketSearchRequest(Queues=["test"])
         combined = await self.client.search_and_get(query_search)
         if combined and isinstance(combined, list):
             logger.info("search_and_get result %s", combined)

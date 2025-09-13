@@ -6,18 +6,19 @@ import httpx
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 
-from .models.client_config_models import TicketOperation, OTOBOClientConfig
-from .models.request_models import (
-    TicketSearchParams,
-    TicketUpdateParams,
-    TicketGetParams,
+from models.client_config_models import TicketOperation, OTOBOClientConfig
+from models.request_models import (
+    TicketSearchRequest,
+    TicketUpdateRequest,
+    TicketGetRequest,
 )
-from .models.response_models import (
+from models.response_models import (
     TicketSearchResponse,
     TicketGetResponse, TicketResponse,
 )
-from .models.ticket_models import TicketDetailOutput, TicketDetailInput
-from .otobo_errors import OTOBOError
+from models.ticket_models import TicketDetailOutput
+from models.request_models import TicketCreateRequest
+from util.otobo_errors import OTOBOError
 from http import HTTPMethod
 
 
@@ -118,7 +119,7 @@ class OTOBOClient:
             return response_model.model_construct(**(resp.json()))
 
     async def create_ticket(
-            self, payload: TicketDetailInput
+            self, payload: TicketCreateRequest
     ) -> TicketDetailOutput:
         """
         Create a new ticket in OTOBO.
@@ -138,12 +139,12 @@ class OTOBOClient:
 
         return response.Ticket
 
-    async def get_ticket(self, params: TicketGetParams) -> TicketDetailOutput:
+    async def get_ticket(self, params: TicketGetRequest) -> TicketDetailOutput:
         """
         Retrieve a single ticket by its ID.
 
         Args:
-            params (TicketGetParams): Parameters containing TicketID.
+            params (TicketGetRequest): Parameters containing TicketID.
 
         Returns:
             TicketGetResponse: Model containing exactly one Ticket object.
@@ -162,13 +163,13 @@ class OTOBOClient:
         return tickets[0]
 
     async def update_ticket(
-            self, payload: TicketUpdateParams
+            self, payload: TicketUpdateRequest
     ) -> TicketDetailOutput:
         """
         Update an existing ticket's fields.
 
         Args:
-            payload (TicketUpdateParams): Parameters including TicketID and update fields.
+            payload (TicketUpdateRequest): Parameters including TicketID and update fields.
 
         Returns:
             TicketUpdateResponse: Response model with update result status.
@@ -184,13 +185,13 @@ class OTOBOClient:
         raise RuntimeError("Update operation did not return updated ticket details")
 
     async def search_tickets(
-            self, query: TicketSearchParams
+            self, query: TicketSearchRequest
     ) -> list[int]:
         """
         Search for tickets matching given criteria.
 
         Args:
-            query (TicketSearchParams): Search filters and options.
+            query (TicketSearchRequest): Search filters and options.
 
         Returns:
             List[int]: List of TicketIDs matching the search criteria.
@@ -204,14 +205,14 @@ class OTOBOClient:
         return response.TicketIDs
 
     async def search_and_get(
-            self, query: TicketSearchParams
+            self, query: TicketSearchRequest
     ) -> list[TicketDetailOutput]:
         """
         Combine ticket search and retrieval in one call sequence.
         Performs a search to retrieve TicketIDs, then fetches each ticket's details.
 
         Args:
-            query (TicketSearchParams): Search filters and options.
+            query (TicketSearchRequest): Search filters and options.
 
         Returns:
             FullTicketSearchResponse: List of Ticket objects matching the search criteria.
@@ -221,6 +222,6 @@ class OTOBOClient:
         """
         self._check_operation_registered([TicketOperation.SEARCH, TicketOperation.GET])
         ticket_get_responses_tasks = [
-            self.get_ticket(TicketGetParams(TicketID=i)) for i in await self.search_tickets(query)
+            self.get_ticket(TicketGetRequest(TicketID=i)) for i in await self.search_tickets(query)
         ]
         return await asyncio.gather(*ticket_get_responses_tasks)

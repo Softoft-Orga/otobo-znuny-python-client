@@ -190,23 +190,23 @@ client = OTOBOClient(config)
 ### 3. Create a ticket
 
 ```python
-from otobo import (TicketOperation, OTOBOClientConfig, AuthData, TicketSearchParams, TicketCreateParams,
-                   TicketHistoryParams, TicketUpdateParams, \
-                   TicketGetParams, OTOBOClient, OTOBOTicketCreateResponse)
+from otobo import (TicketOperation, OTOBOClientConfig, AuthData, TicketSearchRequest, TicketCreateParams,
+                   TicketHistoryParams, TicketUpdateRequest,
+                   TicketGetRequest, OTOBOClient, OTOBOTicketCreateResponse)
 
 payload = TicketCreateParams(
-    Ticket={
-        "Title": "New Order",
-        "Queue": "Sales",
-        "State": "new",
-        "Priority": "3 normal",
-        "CustomerUser": "customer@example.com"
-    },
-    Article={
-        "Subject": "Product Inquiry",
-        "Body": "Please send pricing details...",
-        "MimeType": "text/plain"
-    }
+  Ticket={
+    "Title": "New Order",
+    "Queue": "Sales",
+    "State": "new",
+    "Priority": "3 normal",
+    "CustomerUser": "customer@example.com"
+  },
+  Article={
+    "Subject": "Product Inquiry",
+    "Body": "Please send pricing details...",
+    "MimeType": "text/plain"
+  }
 )
 
 response: OTOBOTicketCreateResponse = await client.create_ticket(payload)
@@ -216,24 +216,24 @@ print(response.TicketID, response.TicketNumber)
 ### 4. Search and retrieve tickets
 
 ```python
-from otobo import TicketSearchParams, TicketGetParams
+from otobo import TicketSearchRequest, TicketGetRequest
 
-search_params = TicketSearchParams(Title="%Order%")
+search_params = TicketSearchRequest(Title="%Order%")
 search_res = await client.search_tickets(search_params)
 ids = search_res.TicketID
 
 for ticket_id in ids:
-    get_params = TicketGetParams(TicketID=ticket_id, AllArticles=1)
-    details = await client.get_ticket(get_params)
-    print(details.Ticket[0])
+  get_params = TicketGetRequest(TicketID=ticket_id, AllArticles=1)
+  details = await client.get_ticket(get_params)
+  print(details.Ticket[0])
 ```
 
 ### 5. Update a ticket
 
 ```python
-from otobo import TicketUpdateParams
+from otobo import TicketUpdateRequest
 
-update_params = TicketUpdateParams(
+update_params = TicketUpdateRequest(
     TicketID=response.TicketID,
     Ticket={"State": "closed"}
 )

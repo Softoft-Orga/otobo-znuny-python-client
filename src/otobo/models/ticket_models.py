@@ -68,7 +68,6 @@ class ArticleDetail(BaseModel):
         CreateBy (Optional[int]): User ID who created the article.
         ArticleID (Optional[int]): Unique article identifier.
         ArticleNumber (Optional[int]): Sequential article number.
-        DynamicField (Optional[List[DynamicFieldItem]]): List of dynamic fields.
     """
     From: Optional[str] = None
     Subject: Optional[str] = None
@@ -82,7 +81,6 @@ class ArticleDetail(BaseModel):
     CreateBy: Optional[int] = None
     ArticleID: Optional[int] = None
     ArticleNumber: Optional[int] = None
-    DynamicField: Optional[List[DynamicFieldItem]] = None
 
 
 class TicketDetailOutput(TicketBase):
@@ -97,15 +95,3 @@ class TicketDetailOutput(TicketBase):
     DynamicField: List[DynamicFieldItem]
 
 
-class TicketDetailInput(BaseModel):
-    """
-    Model for creating or updating a ticket, includes optional details.
-
-    Attributes:
-        Ticket (Optional[TicketCommon]): Core ticket fields to set.
-        Article (Optional[Union[ArticleDetail,List[ArticleDetail]]]): Article(s) to attach.
-        DynamicField (Optional[List[DynamicFieldItem]]): Dynamic fields to set.
-    """
-    Ticket: Optional[TicketBase] = None
-    Article: Optional[Union[ArticleDetail, List[ArticleDetail]]] = None
-    DynamicField: Optional[List[DynamicFieldItem]] = None
