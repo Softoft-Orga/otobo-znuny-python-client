@@ -27,6 +27,7 @@ dependencies = [
     "mariadb>=1.1.13",
     "pydantic>=2.11.9",
     "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.2",
     "requests>=2.32.5",
