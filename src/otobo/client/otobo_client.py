@@ -26,15 +26,6 @@ from http import HTTPMethod
 
 
 class OTOBOClient:
-    """
-    Asynchronous client for interacting with the OTOBO ticketing system via its REST Webservice API.
-
-    Args:
-        config (OTOBOClientConfig): Configuration including base_url, service name, auth and operations mapping.
-        client (httpx.AsyncClient, optional): Custom HTTP client instance.
-         If not provided, a default AsyncClient is used.
-    """
-
     def __init__(self, config: OTOBOClientConfig, client: httpx.AsyncClient = None):
         self._client = client or AsyncClient()
         self.config = config
@@ -92,23 +83,6 @@ class OTOBOClient:
             response_model: type[T],
             data: Optional[dict[str, Any]] = None,
     ) -> T:
-        """
-        Internal helper to perform an HTTP request to an OTOBO Webservice endpoint.
-
-        Args:
-            http_method (HttpMethod): HTTP method enum for the request.
-            ticket_operation (TicketOperation): Operation enum to determine URL path.
-            response_model (Type[T]): Pydantic model for validating the response.
-            data (Dict[str, Any], optional): Payload to send in the request body. Defaults to None.
-
-        Returns:
-            T: Validated response model instance.
-
-        Raises:
-            RuntimeError: If operation is not registered.
-            OTOBOError: If the response JSON contains an error.
-            httpx.HTTPError: For network or HTTP-level errors.
-        """
         self._check_operation_registered(ticket_operation)
         url = self._build_url(self.config.operations[ticket_operation])
         payload: dict[str, Any] = self.auth.model_dump(exclude_none=True) | (data or {})
@@ -124,15 +98,6 @@ class OTOBOClient:
     async def create_ticket(
             self, payload: TicketCreateRequest
     ) -> TicketDetailOutput:
-        """
-        Create a new ticket in OTOBO.
-
-        Args:
-            payload (TicketCreateParams): Parameters for ticket creation.
-
-        Returns:
-            OTOBOTicketCreateResponse: Response model with created ticket details.
-        """
         response: TicketResponse = await self._request(
             HTTPMethod.POST,
             TicketOperation.CREATE,
@@ -143,18 +108,6 @@ class OTOBOClient:
         return response.Ticket
 
     async def get_ticket(self, params: TicketGetRequest) -> TicketDetailOutput:
-        """
-        Retrieve a single ticket by its ID.
-
-        Args:
-            params (TicketGetRequest): Parameters containing TicketID.
-
-        Returns:
-            TicketGetResponse: Model containing exactly one Ticket object.
-
-        Raises:
-            AssertionError: If the response does not contain exactly one ticket.
-        """
         otobo_ticket_get_response = await self._request(
             HTTPMethod.POST,
             TicketOperation.GET,
@@ -168,15 +121,6 @@ class OTOBOClient:
     async def update_ticket(
             self, payload: TicketUpdateRequest
     ) -> TicketDetailOutput:
-        """
-        Update an existing ticket's fields.
-
-        Args:
-            payload (TicketUpdateRequest): Parameters including TicketID and update fields.
-
-        Returns:
-            TicketUpdateResponse: Response model with update result status.
-        """
         response: TicketResponse = await self._request(
             HTTPMethod.PUT,
             TicketOperation.UPDATE,
@@ -190,39 +134,21 @@ class OTOBOClient:
     async def search_tickets(
             self, query: TicketSearchRequest
     ) -> list[int]:
-        """
-        Search for tickets matching given criteria.
 
-        Args:
-            query (TicketSearchRequest): Search filters and options.
-
-        Returns:
-            List[int]: List of TicketIDs matching the search criteria.
-        """
         response: TicketSearchResponse = await self._request(
             HTTPMethod.POST,
             TicketOperation.SEARCH,
             TicketSearchResponse,
             data=query.model_dump(exclude_none=True),
         )
-        return response.TicketID
+        if response.TicketID:
+            return response.TicketID
+        else:
+            return []
 
     async def search_and_get(
             self, query: TicketSearchRequest
     ) -> list[TicketDetailOutput]:
-        """
-        Combine ticket search and retrieval in one call sequence.
-        Performs a search to retrieve TicketIDs, then fetches each ticket's details.
-
-        Args:
-            query (TicketSearchRequest): Search filters and options.
-
-        Returns:
-            FullTicketSearchResponse: List of Ticket objects matching the search criteria.
-
-        Raises:
-            RuntimeError: If SEARCH or GET operations arent configured in the client.
-        """
         self._check_operation_registered([TicketOperation.SEARCH, TicketOperation.GET])
         ticket_get_responses_tasks = [
             self.get_ticket(TicketGetRequest(TicketID=i)) for i in await self.search_tickets(query)

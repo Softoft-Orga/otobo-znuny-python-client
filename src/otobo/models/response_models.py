@@ -26,4 +26,4 @@ class TicketSearchResponse(BaseModel):
     Attributes:
         TicketID (List[int]): List of ticket IDs matching the search criteria.
     """
-    TicketID: List[int]
+    TicketID: List[int] | None = None
