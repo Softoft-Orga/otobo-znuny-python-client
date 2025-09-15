@@ -1,12 +1,12 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type, Union, Iterable
+import random
+from http import HTTPMethod
+from typing import Any, Dict, Optional, Union, Iterable
 
 import httpx
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
-
-"""Asynchronous client implementation for the OTOBO REST API."""
 
 from otobo.models.client_config_models import TicketOperation, OTOBOClientConfig
 from otobo.models.request_models import (
@@ -22,7 +22,6 @@ from otobo.models.response_models import (
 )
 from otobo.models.ticket_models import TicketDetailOutput
 from otobo.util.otobo_errors import OTOBOError
-from http import HTTPMethod
 
 
 class OTOBOClient:
@@ -35,15 +34,6 @@ class OTOBOClient:
         self._logger = logging.getLogger(__name__)
 
     def _build_url(self, endpoint: str) -> str:
-        """
-        Build the full URL for a given endpoint of the configured OTOBO service.
-
-        Args:
-            endpoint (str): Endpoint path defined in OTOBOClientConfig.operations.
-
-        Returns:
-            str: Fully qualified URL for the Webservice endpoint.
-        """
         return f"{self.base_url}/Webservice/{self.service}/{endpoint}"
 
     def _check_operation_registered(
@@ -90,7 +80,7 @@ class OTOBOClient:
                                           headers={'Content-Type': 'application/json'})
         self._check_response(resp)
         try:
-            return response_model.model_validate(resp.json())
+            return response_model.model_validate(resp.json(), strict=False)
         except ValidationError as e:
             self._logger.error("Response validation error: %s", e)
             return response_model.model_construct(**(resp.json()))
@@ -147,10 +137,15 @@ class OTOBOClient:
             return []
 
     async def search_and_get(
-            self, query: TicketSearchRequest
+            self, query: TicketSearchRequest, max_tickets: int = 3, shuffle: bool = False
     ) -> list[TicketDetailOutput]:
         self._check_operation_registered([TicketOperation.SEARCH, TicketOperation.GET])
+
+        ticket_ids = await self.search_tickets(query)
+        if shuffle:
+            random.shuffle(ticket_ids)
+
         ticket_get_responses_tasks = [
-            self.get_ticket(TicketGetRequest(TicketID=i)) for i in await self.search_tickets(query)
+            self.get_ticket(TicketGetRequest(TicketID=i)) for i in ticket_ids[:max_tickets]
         ]
         return await asyncio.gather(*ticket_get_responses_tasks)

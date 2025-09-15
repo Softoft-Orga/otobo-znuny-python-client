@@ -2,8 +2,6 @@ from typing import Optional, Union, List, Dict, Literal
 
 from pydantic import BaseModel, Field
 
-"""Pydantic models for request payloads sent to the OTOBO API."""
-
 from otobo.models.ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
 
 

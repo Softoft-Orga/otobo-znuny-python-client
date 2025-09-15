@@ -1,181 +1,69 @@
-#!/usr/bin/env python3
-import asyncio
-import logging
-import os
-import sys
 import time
-from typing import Optional
-
-from dotenv import load_dotenv
+import logging
+import pytest
 
 from otobo import (
-    OTOBOClient,
-    OTOBOClientConfig,
     TicketOperation,
     TicketSearchRequest,
     TicketGetRequest,
     TicketUpdateRequest,
     TicketCreateRequest,
 )
-from otobo.models.request_models import AuthData
 from otobo.models.ticket_models import TicketBase, ArticleDetail
 
-# --- Setup Logging ---
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
-)
-logger = logging.getLogger("integration_demo")
+logger = logging.getLogger("e2e_test")
 
 
-class OTOBOTestExecutor:
-    """
-    A class to encapsulate the OTOBO client and the testing flow.
-    """
+@pytest.mark.asyncio
+async def test_ticket_flow(otobo_client):
+    ts = int(time.time())
+    title = f"pytest-{ts}"
 
-    def __init__(self, config: OTOBOClientConfig):
-        self.client = OTOBOClient(config)
-        self.ticket_id: Optional[int] = None
-        self.ticket_number: Optional[str] = None
-
-    async def create_ticket(self) -> None:
-        """
-        Creates a new ticket.
-        """
-        logger.info("Creating a new ticket...")
-        ts = int(time.time())
-        title = f"TestTicket {ts}"
-        payload_create = TicketCreateRequest(
-            Ticket=TicketBase(
-                Title=title,
-                Queue="Raw",
-                State="new",
-                Priority="3 normal",
-                Type="Incident",
-                CustomerUser="customer@localhost.de",
-            ),
-            Article=ArticleDetail(
-                Subject="Integration Test",
-                Body="This is a test",
-                ContentType="text/plain; charset=utf-8",
-            ),
-        )
-        res_create = await self.client.create_ticket(payload_create)
-        logger.debug("Create Ticket Response: %s", res_create)
-        self.ticket_number = res_create.TicketNumber
-        self.ticket_id = int(res_create.TicketID)
-        logger.info("Created ticket_number: %s", self.ticket_number)
-
-    async def search_ticket(self) -> None:
-        """
-        Searches for the created ticket.
-        """
-        logger.info("Searching for the ticket...")
-        query_search = TicketSearchRequest(Queues=["Raw"])
-        ticket_search_response = await self.client.search_tickets(query_search)
-        logger.info("Search returned IDs: %s", ticket_search_response)
-        # Add a simple check
-        assert self.ticket_id in ticket_search_response, "The created ticket was not found"
-
-    async def get_ticket_details(self) -> None:
-        """
-        Retrieves the details of the created ticket.
-        """
-        logger.info("Retrieving ticket details...")
-        res_get = await self.client.get_ticket(
-            TicketGetRequest(TicketID=self.ticket_id, AllArticles=1)
-        )
-        logger.info("Ticket Data: %s", res_get)
-
-    async def update_ticket(self) -> None:
-        """
-        Updates the state of the created ticket to 'closed'.
-        """
-        logger.info("Updating the ticket state to 'closed'...")
-        payload_update = TicketUpdateRequest(
-            TicketID=self.ticket_id,
-            Ticket=TicketBase(
-                Queue="Junk"
-            ),
-        )
-        res_update = await self.client.update_ticket(payload_update)
-        logger.info("Updated Ticket Response: %s", res_update)
-        logger.info("Updated TicketID: %s", res_update.TicketID)
-
-
-    async def search_and_get_combined(self) -> None:
-        """
-        Performs a combined search and get operation.
-        """
-        logger.info("Performing search_and_get...")
-        query_search = TicketSearchRequest(Queues=["Raw"])
-        combined = await self.client.search_and_get(query_search)
-        if combined and isinstance(combined, list):
-            logger.info("search_and_get result %s", combined)
-        else:
-            logger.error("search_and_get did not return expected data")
-            sys.exit(1)
-
-
-    async def run_full_test_flow(self) -> None:
-        """
-        Runs the full testing flow in the correct order.
-        """
-        await self.create_ticket()
-        await self.search_ticket()
-        await self.get_ticket_details()
-        await self.update_ticket()
-        await self.search_and_get_combined()
-        logger.info("Integration demo complete successfully.")
-
-
-def get_config_from_env() -> OTOBOClientConfig:
-    """
-    Creates an OTOBOClientConfig from environment variables.
-    """
-    base_url = os.environ.get("OTOBO_BASE_URL")
-    service = os.environ.get("OTOBO_SERVICE")
-    user = os.environ.get("OTOBO_DEMO_USER")
-    password = os.environ.get("OTOBO_DEMO_PASSWORD")
-
-    if not all([base_url, service, user, password]):
-        logger.error(
-            "Please set the OTOBO_BASE_URL, OTOBO_SERVICE, OTOBO_USER, and OTOBO_PASSWORD environment variables.")
-        sys.exit(1)
-    logger.info("Using OTOBO_BASE_URL: %s", base_url)
-    logger.info("Using OTOBO_SERVICE: %s", service)
-    logger.info("Using OTOBO_USER: %s", user)
-    logger.info("Using OTOBO_PASSWORD: %s", password)
-    operations: dict[TicketOperation, str] = {
-        TicketOperation.CREATE: "ticket-create",
-        TicketOperation.SEARCH: "ticket-search",
-        TicketOperation.GET: "ticket-get",
-        TicketOperation.UPDATE: "ticket-update",
-    }
-
-    auth = AuthData(UserLogin=user, Password=password)
-    return OTOBOClientConfig(
-        base_url=base_url,
-        service=service,
-        auth=auth,
-        operations=operations,
+    # 1. create
+    create_req = TicketCreateRequest(
+        Ticket=TicketBase(
+            Title=title,
+            Queue="Raw",
+            State="new",
+            Priority="3 normal",
+            Type="Incident",
+            CustomerUser="customer@localhost.de",
+        ),
+        Article=ArticleDetail(
+            Subject="Integration Test",
+            Body="pytest body",
+            ContentType="text/plain; charset=utf-8",
+        ),
     )
+    create_res = await otobo_client.create_ticket(create_req)
+    ticket_id = int(create_res.TicketID)
+    ticket_number = create_res.TicketNumber
+    assert ticket_id > 0
+    assert ticket_number
 
+    # 2. search
+    search_res = await otobo_client.search_tickets(
+        TicketSearchRequest(Queues=["Raw"])
+    )
+    assert ticket_id in search_res
 
-async def main():
-    """
-    Main function to run the OTOBO test executor.
-    """
-    # Load environment variables from the demo system environment file
-    load_dotenv(os.path.join(os.path.dirname(__file__), "demo_system_env"))
+    # 3. get
+    get_res = await otobo_client.get_ticket(
+        TicketGetRequest(TicketID=ticket_id, AllArticles=1)
+    )
+    assert get_res
 
-    otobo_client_config = get_config_from_env()
-    executor = OTOBOTestExecutor(otobo_client_config)
-    await executor.run_full_test_flow()
+    # 4. update
+    update_res = await otobo_client.update_ticket(
+        TicketUpdateRequest(
+            TicketID=ticket_id,
+            Ticket=TicketBase(Queue="Junk"),
+        )
+    )
+    assert update_res.TicketID == str(ticket_id)
 
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logging.error("An error occurred: %s", e)
-        sys.exit(1)
+    # 5. search_and_get
+    combined = await otobo_client.search_and_get(
+        TicketSearchRequest(Queues=["Raw"])
+    )
+    assert isinstance(combined, list)
