@@ -1,4 +1,5 @@
 # conftest.py
+import asyncio
 import os
 import re
 
@@ -7,9 +8,14 @@ import mariadb
 import pytest
 from dotenv import load_dotenv
 
-from otobo import OTOBOClient, TicketOperation, OTOBOClientConfig
-from otobo.models.request_models import AuthData
-
+from otobo import OTOBOClientConfig, OTOBOClient
+from otobo.domain_models.basic_auth_model import BasicAuth
+from otobo.domain_models.ticket_operation import TicketOperation
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 def _safe_identifier(name: str) -> tuple[str, str | None]:
     if not re.fullmatch(r"[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?", name):
@@ -51,7 +57,7 @@ def clear_table(
 
 @pytest.fixture(scope="session", autouse=True)
 def clear_otobo_tables():
-    load_dotenv(os.path.join(os.path.dirname(__file__), "test_demo_env"))
+    load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
     clear_table(
         host=os.environ["MARIADB_HOST"],
@@ -63,9 +69,10 @@ def clear_otobo_tables():
     )
 
 
-@pytest.fixture(scope="session")
-def otobo_client() -> OTOBOClient:
-    load_dotenv(os.path.join(os.path.dirname(__file__), "test_demo_env"))
+@pytest.fixture(scope="function")
+async def otobo_client() -> OTOBOClient:
+    load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
+
     base_url = os.environ["OTOBO_BASE_URL"]
     service = os.environ["OTOBO_SERVICE"]
     user = os.environ["OTOBO_DEMO_USER"]
@@ -77,7 +84,7 @@ def otobo_client() -> OTOBOClient:
         TicketOperation.GET: "ticket-get",
         TicketOperation.UPDATE: "ticket-update",
     }
-    auth = AuthData(UserLogin=user, Password=password)
+    auth = BasicAuth(UserLogin=user, Password=password)
     print(auth)
     config = OTOBOClientConfig(
         base_url=base_url,
@@ -85,4 +92,4 @@ def otobo_client() -> OTOBOClient:
         auth=auth,
         operation_url_map=operations,
     )
-    return OTOBOClient(config)
+    return OTOBOClient(config=config)

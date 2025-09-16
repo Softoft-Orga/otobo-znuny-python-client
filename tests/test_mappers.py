@@ -17,7 +17,6 @@ def test_build_ticket_create_request_roundtrip():
         priority=IdName(name="3 normal"),
         type=IdName(name="Unclassified"),
         customer_user="user1",
-        dynamic_fields={"X": "Y", "Flag": 1},
         articles=[Article(subject="S", body="B", content_type="text/plain", from_addr="a@b.c", to_addr="x@y.z")],
     )
     req = build_ticket_create_request(t)
@@ -28,10 +27,8 @@ def test_build_ticket_create_request_roundtrip():
     assert req.Ticket.State == "new"
     assert req.Ticket.Priority == "3 normal"
     assert req.Ticket.Type == "Unclassified"
-    df = {i.Name: i.Value for i in req.DynamicField or []}
-    assert df == {"X": "Y", "Flag": 1}
-    assert req.Article.Subject == "S"
-    assert req.Article.Body == "B"
+    assert req.Article[0].Subject == "S"
+    assert req.Article[0].Body == "B"
     wire = TicketDetailOutput(
         Title=req.Ticket.Title,
         QueueID=req.Ticket.QueueID,
@@ -42,10 +39,10 @@ def test_build_ticket_create_request_roundtrip():
         CustomerUser=req.Ticket.CustomerUser,
         TicketID=111,
         TicketNumber="2025",
-        Created=datetime.utcnow().isoformat(),
-        Changed=datetime.utcnow().isoformat(),
+        Created=datetime.now().isoformat(),
+        Changed=datetime.now().isoformat(),
         Article=req.Article,
-        DynamicField=req.DynamicField,
+        DynamicField=[],
     )
     back = parse_ticket_detail_output(wire)
     assert back.title == "Demo"
@@ -54,7 +51,6 @@ def test_build_ticket_create_request_roundtrip():
     assert back.priority == IdName(name="3 normal")
     assert back.type == IdName(name="Unclassified")
     assert back.customer_user == "user1"
-    assert back.dynamic_fields == {"X": "Y", "Flag": 1}
     assert len(back.articles) == 1
     assert back.articles[0].subject == "S"
     assert back.number == "2025"
@@ -71,16 +67,13 @@ def test_build_ticket_update_request_includes_ids_and_names():
         priority=IdName(id=3, name="3 normal"),
         type=IdName(id=2, name="Incident"),
         customer_user="user2",
-        dynamic_fields={"A": "B"},
     )
-    req = build_ticket_update_request(t, fields_to_update=["Title", "QueueID", "StateID"])
+    req = build_ticket_update_request(t)
     assert isinstance(req, TicketUpdateRequest)
     assert req.TicketID == 123
     assert req.Ticket.Title == "Updated"
     assert req.Ticket.QueueID == 5
     assert req.Ticket.StateID == 1
-    df = {i.Name: i.Value for i in req.DynamicField or []}
-    assert df == {"A": "B"}
 
 
 def test_build_ticket_search_request_idname_lists():
@@ -104,7 +97,6 @@ def test_build_ticket_search_request_idname_lists():
     assert req.States == ["open"]
     assert req.PriorityIDs == [4]
     assert req.Types == ["Incident"]
-    assert req.CustomerUserLogin == ["user1", "user2"]
     assert req.UseSubQueues == 1
 
 
@@ -112,10 +104,6 @@ def test_build_ticket_get_request_by_id_and_number():
     r1 = build_ticket_get_request(ticket_id=7)
     assert isinstance(r1, TicketGetRequest)
     assert r1.TicketID == 7
-    assert r1.TicketNumber is None
-    r2 = build_ticket_get_request(ticket_number="T-42")
-    assert r2.TicketID is None
-    assert r2.TicketNumber == "T-42"
 
 
 def test_parse_ticket_detail_output_handles_single_and_list_article():

@@ -30,7 +30,6 @@ class Ticket(BaseModel):
     customer_user: str | None = None
     created_at: datetime | None = None
     changed_at: datetime | None = None
-    dynamic_fields: dict[str, Any] = Field(default_factory=dict)
     articles: list[Article] = Field(default_factory=list)
 
 class TicketSearch(BaseModel):

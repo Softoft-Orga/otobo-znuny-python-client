@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 
 
 class TicketOperation(Enum):
@@ -16,3 +17,13 @@ class TicketOperation(Enum):
     @property
     def type(self) -> str:
         return self.operation_type
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, TicketOperation):
+            return self.value == other.value
+        if isinstance(other, str):
+            return self.value == other
+        return False

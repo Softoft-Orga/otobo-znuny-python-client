@@ -9,7 +9,6 @@ from typing import Any, Iterable, Optional
 import httpx
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
-from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type
 
 from otobo.domain_models.otobo_client_config import OTOBOClientConfig
 from otobo.domain_models.ticket_operation import TicketOperation
@@ -33,21 +32,15 @@ class OTOBOClient:
         self.config = config
         self._client = client or AsyncClient()
         self.base_url = config.base_url.rstrip("/")
-        self.service = config.service
+        self.webservice_name = config.webservice_name
         self.auth = config.auth
-        self.operation_map = config.operations
+        self.operation_map = config.operation_url_map
         self.max_retries = max_retries
         self._logger = logging.getLogger(__name__)
 
     def _build_url(self, endpoint_name: str) -> str:
-        return f"{self.base_url}/Webservice/{self.service}/{endpoint_name}"
+        return f"{self.base_url}/Webservice/{self.webservice_name}/{endpoint_name}"
 
-    def _check_operation_registered(self, operations: TicketOperation | Iterable[TicketOperation]) -> None:
-        ops = operations if isinstance(operations, Iterable) and not isinstance(operations, (str, bytes)) else [
-            operations]
-        missing = [op for op in ops if op not in self.operation_map]
-        if missing:
-            raise RuntimeError(f"Operations not configured: {missing}")
 
     def _extract_error(self, payload: Any) -> Optional[OTOBOError]:
         if isinstance(payload, dict) and "Error" in payload:
@@ -55,13 +48,6 @@ class OTOBOClient:
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
         return None
 
-    @retry(
-        stop=stop_after_attempt(3),  # default, can also use self.max_retries with functools.partial
-        wait=wait_random_exponential(multiplier=0.8, max=5),
-        retry=retry_if_exception_type(
-            (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.NetworkError, json.JSONDecodeError)),
-        reraise=True,
-    )
     async def _send[T: BaseModel](
             self,
             method: HTTPMethod,
@@ -69,7 +55,6 @@ class OTOBOClient:
             response_model: type[T],
             data: dict[str, Any] | None = None,
     ) -> T:
-        self._check_operation_registered(operation)
         endpoint_name = self.operation_map[operation]
         url = self._build_url(endpoint_name)
         request_id = uuid.uuid4().hex
@@ -150,7 +135,6 @@ class OTOBOClient:
 
     async def search_and_get(self, request: TicketSearchRequest, max_tickets: int = 3, shuffle: bool = False) -> list[
         TicketDetailOutput]:
-        self._check_operation_registered([TicketOperation.SEARCH, TicketOperation.GET])
         ids = await self.search_tickets(request)
         if shuffle:
             random.shuffle(ids)

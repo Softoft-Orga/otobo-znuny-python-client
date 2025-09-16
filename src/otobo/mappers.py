@@ -1,8 +1,8 @@
 from typing import Any
 
-from domain_models.ticket_models import Article, IdName, Ticket
-from models.ticket_models import DynamicFieldItem, ArticleDetail, TicketDetailOutput, TicketBase
-from otobo import TicketCreateRequest, TicketUpdateRequest
+from otobo.domain_models.ticket_models import Article, IdName, Ticket, TicketSearch
+from otobo.models.ticket_models import DynamicFieldItem, ArticleDetail, TicketDetailOutput, TicketBase
+from otobo import TicketCreateRequest, TicketUpdateRequest, TicketSearchRequest, TicketGetRequest
 
 
 def _dynamic_fields_dict_to_items(dynamic_fields: dict[str, Any]) -> list[DynamicFieldItem]:
@@ -68,51 +68,42 @@ def parse_ticket_detail_output(ticket_wire: TicketDetailOutput) -> Ticket:
         customer_user=ticket_wire.CustomerUser,
         created_at=ticket_wire.Created,
         changed_at=ticket_wire.Changed,
-        dynamic_fields=_dynamic_fields_items_to_dict(ticket_wire.DynamicField),
         articles=[_article_wire_to_domain(a) for a in wire_articles],
     )
 
 
+def build_ticket_base(ticket_domain: Ticket) -> TicketBase:
+    return TicketBase(
+        Title=ticket_domain.title,
+        QueueID=ticket_domain.queue.id if ticket_domain.queue else None,
+        Queue=ticket_domain.queue.name if ticket_domain.queue else None,
+        StateID=ticket_domain.state.id if ticket_domain.state else None,
+        State=ticket_domain.state.name if ticket_domain.state else None,
+        PriorityID=ticket_domain.priority.id if ticket_domain.priority else None,
+        Priority=ticket_domain.priority.name if ticket_domain.priority else None,
+        CustomerUser=ticket_domain.customer_user,
+        TypeID=ticket_domain.type.id if ticket_domain.type else None,
+        Type=ticket_domain.type.name if ticket_domain.type else None,
+    )
+
+
 def build_ticket_create_request(ticket_domain: Ticket) -> TicketCreateRequest:
-    ticket_base = TicketBase(
-        Title=ticket_domain.title,
-        QueueID=ticket_domain.queue.id if ticket_domain.queue else None,
-        Queue=ticket_domain.queue.name if ticket_domain.queue else None,
-        StateID=ticket_domain.state.id if ticket_domain.state else None,
-        State=ticket_domain.state.name if ticket_domain.state else None,
-        PriorityID=ticket_domain.priority.id if ticket_domain.priority else None,
-        Priority=ticket_domain.priority.name if ticket_domain.priority else None,
-        CustomerUser=ticket_domain.customer_user,
-        TypeID=ticket_domain.type.id if ticket_domain.type else None,
-        Type=ticket_domain.type.name if ticket_domain.type else None,
-    )
-    article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
-    return TicketCreateRequest(Ticket=ticket_base, Article=article_wire,
-                               DynamicField=_dynamic_fields_dict_to_items(ticket_domain.dynamic_fields))
+    ticket_base = build_ticket_base(ticket_domain)
+    article_wire = [_article_domain_to_wire(article) for article in
+                    ticket_domain.articles] if ticket_domain.articles else []
+    return TicketCreateRequest(Ticket=ticket_base, Article=article_wire)
 
 
-def build_ticket_update_request(ticket_domain: Ticket,
-                                fields_to_update: list[str] | None = None) -> TicketUpdateRequest:
-    ticket_base = TicketBase(
-        Title=ticket_domain.title,
-        QueueID=ticket_domain.queue.id if ticket_domain.queue else None,
-        Queue=ticket_domain.queue.name if ticket_domain.queue else None,
-        StateID=ticket_domain.state.id if ticket_domain.state else None,
-        State=ticket_domain.state.name if ticket_domain.state else None,
-        PriorityID=ticket_domain.priority.id if ticket_domain.priority else None,
-        Priority=ticket_domain.priority.name if ticket_domain.priority else None,
-        CustomerUser=ticket_domain.customer_user,
-        TypeID=ticket_domain.type.id if ticket_domain.type else None,
-        Type=ticket_domain.type.name if ticket_domain.type else None,
-    )
+def build_ticket_update_request(ticket_domain: Ticket) -> TicketUpdateRequest:
+    ticket_base = build_ticket_base(ticket_domain)
+
     article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
     return TicketUpdateRequest(
         Ticket=ticket_base,
         Article=article_wire,
-        DynamicField=_dynamic_fields_dict_to_items(ticket_domain.dynamic_fields),
+        DynamicField=[],
         TicketID=ticket_domain.id,
         TicketNumber=ticket_domain.number,
-        Fields=fields_to_update,
     )
 
 
@@ -132,14 +123,9 @@ def build_ticket_search_request(search_model: TicketSearch) -> TicketSearchReque
         PriorityIDs=priority_ids,
         Types=type_names,
         TypeIDs=type_ids,
-        CustomerUserLogin=search_model.customer_users,
-        UseSubQueues=1 if search_model.use_subqueues else 0,
+        UseSubQueues=search_model.use_subqueues,
     )
 
 
-def build_ticket_get_request(ticket_id: int | None = None, ticket_number: str | None = None) -> TicketGetRequest:
-    if ticket_id is not None:
-        return TicketGetRequest(TicketID=ticket_id)
-    if ticket_number is not None:
-        return TicketGetRequest(TicketNumber=ticket_number)
-    return TicketGetRequest()
+def build_ticket_get_request(ticket_id: int) -> TicketGetRequest:
+    return TicketGetRequest(TicketID=ticket_id)

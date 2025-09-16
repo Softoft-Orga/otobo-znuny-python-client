@@ -1,6 +1,6 @@
 from typing import Optional, Union, List, Dict, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from otobo.models.ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
 
@@ -39,11 +39,27 @@ class TicketGetRequest(BaseModel):
     HTMLBodyAsAttachment: int = 1
 
 
-class TicketCreateRequest(BaseModel):
-    Ticket: Optional[TicketBase] = None
-    Article: Optional[Union[ArticleDetail, List[ArticleDetail]]] = None
-    DynamicField: Optional[List[DynamicFieldItem]] = None
 
+class TicketCreateRequest(BaseModel):
+    Ticket: TicketBase | None = None
+    Article: ArticleDetail | list[ArticleDetail] | None = None
+    DynamicField: list[DynamicFieldItem] | None = None
+
+    @field_validator("Article", mode="before")
+    @classmethod
+    def _coerce_article(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, ArticleDetail):
+            return value
+        if isinstance(value, dict):
+            return ArticleDetail.model_validate(value, strict=False)
+        if isinstance(value, (list, tuple)):
+            return [
+                x if isinstance(x, ArticleDetail) else ArticleDetail.model_validate(x, strict=False)
+                for x in value
+            ]
+        raise TypeError("Article must be ArticleDetail | dict | list | None")
 
 class TicketUpdateRequest(TicketCreateRequest):
     TicketID: Optional[int] = None
