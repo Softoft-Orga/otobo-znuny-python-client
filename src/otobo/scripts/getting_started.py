@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import re
 import secrets
 import string
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-import typer
 import requests
+import typer
 
 from setup_webservices import WebServiceGenerator
 
@@ -20,13 +20,6 @@ OPERATIONS: Dict[str, str] = {
     "search": "TicketSearch",
     "create": "TicketCreate",
     "update": "TicketUpdate",
-}
-
-OP_PATHS: Dict[str, str] = {
-    "TicketGet": "ticket/get",
-    "TicketSearch": "ticket/search",
-    "TicketCreate": "ticket/create",
-    "TicketUpdate": "ticket/update",
 }
 
 
@@ -110,7 +103,7 @@ def bootstrap(
         if not email:
             email = default_email
 
-    enabled_ops: Dict[str, None] = {OPERATIONS[o]: None for o in ops_clean}
+    enabled_ops: dict[str, None] = {OPERATIONS[o]: None for o in ops_clean}
     generator = WebServiceGenerator()
     yaml_content = generator.generate_yaml(
         webservice_name=name,

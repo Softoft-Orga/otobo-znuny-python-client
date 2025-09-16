@@ -1,7 +1,9 @@
 # conftest.py
 import os
 import re
-
+# tests/conftest.py (Ergänzung)
+import pytest_asyncio
+from tests.datasets import create_dataset
 import mariadb
 import pytest
 import typer
@@ -82,3 +84,9 @@ def otobo_client() -> OTOBOClient:
         operations=operations,
     )
     return OTOBOClient(config)
+
+
+
+@pytest_asyncio.fixture
+async def dataset_small(otobo_client):
+    return await create_dataset(otobo_client, {"Raw": 5, "Junk": 3}, prefix="ds1")

@@ -2,8 +2,6 @@ from pathlib import Path
 from typing import Dict, Any
 import yaml
 
-"""Utilities for reading OTOBO Webservice configuration files."""
-
 from otobo.models.client_config_models import TicketOperation, OTOBOClientConfig
 from otobo.models.request_models import AuthData
 

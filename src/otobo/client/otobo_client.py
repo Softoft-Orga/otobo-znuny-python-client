@@ -40,24 +40,14 @@ class OTOBOClient:
             self,
             op_keys: Union[TicketOperation, Iterable[TicketOperation]]
     ) -> None:
-        if isinstance(op_keys, (list, tuple, set)):
-            missing = [op for op in op_keys if op not in self.config.operations]
-            if missing:
-                raise RuntimeError(f"Operations not configured in OTOBOClientConfig: {missing}")
-        else:
-            if op_keys not in self.config.operations:
-                raise RuntimeError(f"Operation '{op_keys}' is not configured in OTOBOClientConfig")
+        op_keys = op_keys if isinstance(op_keys, Iterable) else [op_keys]
+        missing = [op for op in op_keys if op not in self.config.operations]
+        if missing:
+            raise RuntimeError(f"Operations not configured in OTOBOClientConfig: {missing}")
+        if op_keys not in self.config.operations:
+            raise RuntimeError(f"Operation '{op_keys}' is not configured in OTOBOClientConfig")
 
     def _check_response(self, response: httpx.Response) -> None:
-        """
-        Inspect the JSON response for an error and raise if present.
-
-        Args:
-            response (Dict[str, Any]): Parsed JSON response from OTOBO.
-
-        Raises:
-            OTOBOError: If the response contains an 'Error' key with details.
-        """
         response_json = response.json()
         if "Error" in response_json:
             err = response_json["Error"]

@@ -40,7 +40,6 @@ class ProviderOperationConfig(BaseModel):
 
 class OperationSpec(BaseModel):
     op: TicketOperation
-    provider_name: str
     route: str
     description: str
     methods: List[str]
@@ -48,26 +47,23 @@ class OperationSpec(BaseModel):
 
 
 class WebServiceGenerator:
-    DEFAULT_SPECS: Dict[TicketOperation, OperationSpec] = {
+    DEFAULT_SPECS: dict[TicketOperation, OperationSpec] = {
         TicketOperation.CREATE: OperationSpec(
             op=TicketOperation.CREATE,
-            provider_name="TicketCreate",
-            route="ticket/create",
+            route="ticket-create",
             description="Creates a new ticket.",
             methods=["POST"],
             include_ticket_data="1",
         ),
         TicketOperation.GET: OperationSpec(
             op=TicketOperation.GET,
-            provider_name="TicketGet",
-            route="ticket/get",
+            route="ticket-get",
             description="Retrieves a ticket by its ID.",
             methods=["POST"],
             include_ticket_data="1",
         ),
         TicketOperation.SEARCH: OperationSpec(
             op=TicketOperation.SEARCH,
-            provider_name="TicketSearch",
             route="ticket/search",
             description="Searches for tickets based on criteria.",
             methods=["POST"],
@@ -75,7 +71,6 @@ class WebServiceGenerator:
         ),
         TicketOperation.UPDATE: OperationSpec(
             op=TicketOperation.UPDATE,
-            provider_name="TicketUpdate",
             route="ticket/update",
             description="Updates an existing ticket.",
             methods=["PUT"],
@@ -83,12 +78,21 @@ class WebServiceGenerator:
         ),
     }
 
+    def _create_operation_configs(self, s: OperationSpec, inbound: Dict[str, Any]) -> dict[str, dict]:
+        return ProviderOperationConfig(
+            Type=s.op.type,
+            Description=s.description,
+            IncludeTicketData=s.include_ticket_data,
+            MappingInbound=inbound,
+            MappingOutbound=self._outbound_mapping(),
+        ).model_dump()
+
     def generate_yaml(
-        self,
-        webservice_name: str,
-        enabled_operations: List[TicketOperation],
-        restricted_user: str | None = None,
-        framework_version: str = "11.0.0",
+            self,
+            webservice_name: str,
+            enabled_operations: List[TicketOperation],
+            restricted_user: str | None = None,
+            framework_version: str = "11.0.0",
     ) -> str:
         name = self._validate_name(webservice_name)
         specs = [self.DEFAULT_SPECS[o] for o in enabled_operations if o in self.DEFAULT_SPECS]
@@ -96,21 +100,15 @@ class WebServiceGenerator:
             raise ValueError("No operations enabled.")
         inbound_base = self._inbound_mapping(restricted_user)
         description = self._description(name, restricted_user)
-        route_mapping: Dict[str, Any] = {}
-        operations: Dict[str, Any] = {}
+        route_mapping: dict[str, dict] = {}
+        operations: dict[str, dict] = {}
         for s in specs:
             inbound = copy.deepcopy(inbound_base)
             route_mapping[s.provider_name] = RouteMappingConfig(
                 Route=f"/{s.route}",
                 RequestMethod=s.methods,
             ).model_dump()
-            operations[s.provider_name] = ProviderOperationConfig(
-                Type=f"Ticket::{s.provider_name}",
-                Description=s.description,
-                IncludeTicketData=s.include_ticket_data,
-                MappingInbound=inbound,
-                MappingOutbound=self._outbound_mapping(),
-            ).model_dump()
+            operations[s.provider_name] = self._create_operation_configs(s, inbound)
         data = {
             "Debugger": {"DebugThreshold": "debug", "TestMode": "0"},
             "Description": description,
@@ -175,15 +173,19 @@ class WebServiceGenerator:
 
 @app.command()
 def generate(
-    name: Annotated[str, typer.Option("--name", rich_help_panel="Required")],
-    enable_ticket_get: Annotated[bool, typer.Option("--enable-ticket-get", rich_help_panel="Operations")] = False,
-    enable_ticket_search: Annotated[bool, typer.Option("--enable-ticket-search", rich_help_panel="Operations")] = False,
-    enable_ticket_create: Annotated[bool, typer.Option("--enable-ticket-create", rich_help_panel="Operations")] = False,
-    enable_ticket_update: Annotated[bool, typer.Option("--enable-ticket-update", rich_help_panel="Operations")] = False,
-    allow_user: Annotated[str | None, typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
-    allow_all_agents: Annotated[bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")] = False,
-    version: Annotated[str, typer.Option("--version", rich_help_panel="Optional")] = "11.0.0",
-    file: Annotated[str | None, typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional")] = None,
+        name: Annotated[str, typer.Option("--name", rich_help_panel="Required")],
+        enable_ticket_get: Annotated[bool, typer.Option("--enable-ticket-get", rich_help_panel="Operations")] = False,
+        enable_ticket_search: Annotated[
+            bool, typer.Option("--enable-ticket-search", rich_help_panel="Operations")] = False,
+        enable_ticket_create: Annotated[
+            bool, typer.Option("--enable-ticket-create", rich_help_panel="Operations")] = False,
+        enable_ticket_update: Annotated[
+            bool, typer.Option("--enable-ticket-update", rich_help_panel="Operations")] = False,
+        allow_user: Annotated[
+            str | None, typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
+        allow_all_agents: Annotated[bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")] = False,
+        version: Annotated[str, typer.Option("--version", rich_help_panel="Optional")] = "11.0.0",
+        file: Annotated[str | None, typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional")] = None,
 ):
     if not (allow_user or allow_all_agents):
         typer.secho("Error: You must specify an authentication mode.", fg=typer.colors.RED)
@@ -191,7 +193,7 @@ def generate(
     if allow_user and allow_all_agents:
         typer.secho("Error: --allow-user and --allow-all-agents are mutually exclusive.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    enabled: List[TicketOperation] = [
+    enabled: list[TicketOperation] = [
         op
         for op, ok in [
             (TicketOperation.GET, enable_ticket_get),

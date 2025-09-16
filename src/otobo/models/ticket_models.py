@@ -27,13 +27,6 @@ class TicketBase(BaseModel):
 
 
 class DynamicFieldItem(BaseModel):
-    """
-    Represents a dynamic field key-value pair for tickets.
-
-    Attributes:
-        Name (str): Name of the dynamic field.
-        Value (Optional[Any]): Value assigned to the field.
-    """
     Name: str
     Value: Optional[Any] = None
 

@@ -10,20 +10,8 @@ class TicketResponse(BaseModel):
 
 
 class TicketGetResponse(BaseModel):
-    """
-    Simplified response model for a single ticket retrieval.
-
-    Attributes:
-        Ticket (TicketDetailOutput): Details of the fetched ticket.
-    """
     Ticket: list[TicketDetailOutput]
 
 
 class TicketSearchResponse(BaseModel):
-    """
-    Response model for ticket search operation.
-
-    Attributes:
-        TicketID (List[int]): List of ticket IDs matching the search criteria.
-    """
     TicketID: List[int] | None = None
