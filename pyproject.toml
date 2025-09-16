@@ -31,6 +31,7 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.2",
     "requests>=2.32.5",
+    "tenacity>=9.1.2",
     "typer>=0.17.4",
 ]
 

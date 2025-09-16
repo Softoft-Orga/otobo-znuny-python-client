@@ -11,13 +11,15 @@ pip install otobo
 ## Configuration
 
 ```python
-from otobo import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon, ArticleDetail, TicketOperation
+from otobo import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon, ArticleDetail,
+
+TicketOperation
 
 config = OTOBOClientConfig(
     base_url="https://your-otobo-server/nph-genericinterface.pl",
-    service="OTOBO",
+    webservice_name="OTOBO",
     auth=AuthData(UserLogin="user1", Password="SecurePassword"),
-    operations={
+    operation_url_map={
         TicketOperation.CREATE.value: "ticket",
         TicketOperation.SEARCH.value: "ticket/search",
     },

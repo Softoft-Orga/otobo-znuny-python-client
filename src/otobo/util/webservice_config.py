@@ -2,7 +2,8 @@ from pathlib import Path
 from typing import Dict, Any
 import yaml
 
-from otobo.models.client_config_models import TicketOperation, OTOBOClientConfig
+from domain_models.otobo_client_config import OTOBOClientConfig
+from otobo import TicketOperation
 from otobo.models.request_models import AuthData
 
 TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
@@ -35,7 +36,7 @@ def create_otobo_client_config(
         raise ValueError("No supported ticket operations found in webservice YAML.")
     return OTOBOClientConfig(
         base_url=base_url,
-        service=service,
+        webservice_name=service,
         auth=auth,
-        operations=operations,
+        operation_url_map=operations,
     )

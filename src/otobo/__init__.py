@@ -1,5 +1,6 @@
-from .client.otobo_client import OTOBOClient
-from .models.client_config_models import OTOBOClientConfig, TicketOperation
+from .clients.otobo_client import OTOBOClient
+from domain_models.otobo_client_config import OTOBOClientConfig
+from domain_models.ticket_operation import TicketOperation
 from .models.request_models import (
     TicketCreateRequest,
     TicketGetRequest,
@@ -17,7 +18,6 @@ from .models.response_models import (
 __all__ = [
     "OTOBOClient",
     "OTOBOClientConfig",
-    "TicketOperation",
     "TicketCreateRequest",
     "TicketGetRequest",
     "TicketUpdateRequest",

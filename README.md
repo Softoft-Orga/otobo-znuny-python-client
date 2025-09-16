@@ -178,16 +178,16 @@ from otobo import TicketOperation, OTOBOClientConfig
 from otobo import AuthData
 
 config = OTOBOClientConfig(
-    base_url="https://your-otobo-server/nph-genericinterface.pl",
-    service="OTOBO",
-    auth=AuthData(UserLogin="user1", Password="SecurePassword"),
-    operations={
-        TicketOperation.CREATE.value: "ticket",
-        TicketOperation.SEARCH.value: "ticket/search",
-        TicketOperation.GET.value: "ticket/get",
-        TicketOperation.UPDATE.value: "ticket",
-        TicketOperation.HISTORY_GET.value: "ticket/history",
-    }
+  base_url="https://your-otobo-server/nph-genericinterface.pl",
+  webservice_name="OTOBO",
+  auth=AuthData(UserLogin="user1", Password="SecurePassword"),
+  operation_url_map={
+    TicketOperation.CREATE.value: "ticket",
+    TicketOperation.SEARCH.value: "ticket/search",
+    TicketOperation.GET.value: "ticket/get",
+    TicketOperation.UPDATE.value: "ticket",
+    TicketOperation.HISTORY_GET.value: "ticket/history",
+  }
 )
 ```
 

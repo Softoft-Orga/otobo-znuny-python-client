@@ -5,8 +5,9 @@ import pytest
 import pytest_asyncio
 from http import HTTPMethod
 
-from otobo.client.otobo_client import OTOBOClient
-from otobo.models.client_config_models import OTOBOClientConfig, TicketOperation
+from otobo.clients.otobo_client import OTOBOClient
+from domain_models.otobo_client_config import OTOBOClientConfig
+from otobo import TicketOperation
 from otobo.models.request_models import (
     AuthData,
     TicketCreateRequest,
@@ -27,9 +28,9 @@ from otobo.util.otobo_errors import OTOBOError
 def sample_config() -> OTOBOClientConfig:
     return OTOBOClientConfig(
         base_url="https://example.com/otobo/",
-        service="AIService",
+        webservice_name="AIService",
         auth=AuthData(UserLogin="user", Password="pass"),
-        operations={
+        operation_url_map={
             TicketOperation.CREATE: "ticket-create",
             TicketOperation.GET: "ticket-get",
             TicketOperation.UPDATE: "ticket-update",
@@ -62,7 +63,7 @@ async def test_check_operation_registered_passes(client: OTOBOClient):
 @pytest.mark.asyncio
 async def test_check_operation_registered_single_missing(sample_config: OTOBOClientConfig):
     cfg = sample_config.model_copy(deep=True)
-    cfg.operations.pop(TicketOperation.GET)
+    cfg.operation_url_map.pop(TicketOperation.GET)
     client = OTOBOClient(cfg)
     with pytest.raises(RuntimeError):
         client._check_operation_registered(TicketOperation.GET)
@@ -71,7 +72,7 @@ async def test_check_operation_registered_single_missing(sample_config: OTOBOCli
 @pytest.mark.asyncio
 async def test_check_operation_registered_multiple_missing(sample_config: OTOBOClientConfig):
     cfg = sample_config.model_copy(deep=True)
-    cfg.operations.pop(TicketOperation.UPDATE)
+    cfg.operation_url_map.pop(TicketOperation.UPDATE)
     client = OTOBOClient(cfg)
     with pytest.raises(RuntimeError):
         client._check_operation_registered([TicketOperation.CREATE, TicketOperation.UPDATE])
@@ -150,7 +151,7 @@ async def test_request_returns_unvalidated_on_error(sample_config: OTOBOClientCo
 @pytest.mark.asyncio
 async def test_request_raises_when_operation_missing(sample_config: OTOBOClientConfig):
     cfg = sample_config.model_copy(deep=True)
-    cfg.operations.pop(TicketOperation.SEARCH)
+    cfg.operation_url_map.pop(TicketOperation.SEARCH)
     client = OTOBOClient(cfg)
     try:
         with pytest.raises(RuntimeError):
@@ -268,7 +269,7 @@ async def test_search_and_get_combines_results(client: OTOBOClient, monkeypatch)
 @pytest.mark.asyncio
 async def test_search_and_get_raises_when_operation_missing(sample_config: OTOBOClientConfig):
     cfg = sample_config.model_copy(deep=True)
-    cfg.operations.pop(TicketOperation.GET)
+    cfg.operation_url_map.pop(TicketOperation.GET)
     client = OTOBOClient(cfg)
     try:
         with pytest.raises(RuntimeError):

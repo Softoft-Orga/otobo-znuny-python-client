@@ -1,7 +1,4 @@
-from enum import Enum
-from typing import Self
-
-from tests.otobo_entity import OtoboEntity
+from tests.e2e.demo_system.otobo_entity import OtoboEntity
 
 
 class Queue(OtoboEntity):
