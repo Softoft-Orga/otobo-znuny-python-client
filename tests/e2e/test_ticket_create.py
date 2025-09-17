@@ -3,98 +3,85 @@ import time
 from textwrap import dedent
 import pytest
 
+from otobo.domain_models.ticket_models import Ticket, IdName, Article
 from otobo.models.ticket_models import ArticleDetail, TicketBase
 from otobo.models.request_models import TicketCreateRequest, TicketGetRequest
 
+
 @pytest.mark.asyncio
-async def test_ticket_create_and_get_plain(otobo_client):
+async def test_create_and_get_ticket_domain(otobo_client):
     title = f"plain-{int(time.time())}"
-    req = TicketCreateRequest(
-        Ticket=TicketBase(
-            Title=title,
-            Queue="Raw",
-            State="new",
-            Priority="3 normal",
-            Type="Incident",
-            CustomerUser="customer@localhost.de",
-        ),
-        Article=ArticleDetail(
-            Subject="Plain",
-            Body="Hello world",
-            ContentType="text/plain; charset=utf-8",
-        ),
+    created = await otobo_client.create_ticket(
+        Ticket(
+            title=title,
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="Plain", body="Hello world", content_type="text/plain; charset=utf-8")],
+        )
     )
-    created = await otobo_client.create_ticket(req)
-    tid = int(created.TicketID)
-    assert tid > 0
-
-    got = await otobo_client.get_ticket(TicketGetRequest(TicketID=tid, AllArticles=1))
-    assert got.Title == title
-    assert got.Queue == "Raw"
-    assert got.State == "new"
-    assert got.Priority == "3 normal"
-    assert got.Type == "Incident"
-    arts = got.Article if isinstance(got.Article, list) else [got.Article]
-    assert arts and "Hello world" in arts[0].Body
+    assert created.id is not None and created.number
+    got = await otobo_client.get_ticket(ticket_id=created.id)
+    assert got.title == title
+    assert got.queue and got.queue.name == "Raw"
+    assert got.state and got.state.name == "new"
+    assert got.priority and got.priority.name == "3 normal"
+    assert got.type and got.type.name == "Incident"
+    assert got.articles and "Hello world" in (got.articles[0].body or "")
 
 @pytest.mark.asyncio
-async def test_ticket_create_and_get_html(otobo_client):
-    title = f"html-{int(time.time())}"
-    html_body = dedent(
-        """\
-        <p><strong>Edge</strong> with HTML &amp; chars &lt;x&gt;.</p>
-        """
+async def test_update_title_and_priority_domain(otobo_client):
+    title = f"upd-{int(time.time())}"
+    created = await otobo_client.create_ticket(
+        Ticket(
+            title=title,
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="init", body="init-body", content_type="text/plain; charset=utf-8")],
+        )
     )
-    req = TicketCreateRequest(
-        Ticket=TicketBase(
-            Title=title,
-            Queue="Raw",
-            State="new",
-            Priority="4 high",
-            Type="Incident",
-            CustomerUser="customer@localhost.de",
-        ),
-        Article=ArticleDetail(
-            Subject="HTML",
-            Body=html_body,
-            ContentType="text/html; charset=utf-8",
-        ),
+    tid = created.id
+    updated = await otobo_client.update_ticket(
+        Ticket(
+            id=tid,
+            title=title + "-updated",
+            priority=IdName(name="4 high"),
+        )
     )
-    created = await otobo_client.create_ticket(req)
-    tid = int(created.TicketID)
-    assert tid > 0
-
-    got = await otobo_client.get_ticket(TicketGetRequest(TicketID=tid, AllArticles=1))
-    assert got.Title == title
-    assert got.Priority == "4 high"
-    arts = got.Article if isinstance(got.Article, list) else [got.Article]
-    assert arts and "<x>" in arts[0].Body
+    assert updated.title == title + "-updated"
+    assert updated.priority and (updated.priority.name == "4 high" or updated.priority.id == 4)
+    got = await otobo_client.get_ticket(ticket_id=tid)
+    assert got.title == title + "-updated"
+    assert got.priority and (got.priority.name == "4 high" or got.priority.id == 4)
 
 @pytest.mark.asyncio
-async def test_ticket_create_with_numeric_ids(otobo_client):
-    title = f"numeric-{int(time.time())}"
-    req = TicketCreateRequest(
-        Ticket=TicketBase(
-            Title=title,
-            QueueID=2,
-            StateID=1,
-            PriorityID=5,
-            TypeID=2,
-            CustomerUser="customer@localhost.de",
-        ),
-        Article=ArticleDetail(
-            Subject="Numeric IDs",
-            Body="Created using numeric identifiers",
-            ContentType="text/plain; charset=utf-8",
-        ),
+async def test_update_add_article_domain(otobo_client):
+    title = f"updart-{int(time.time())}"
+    created = await otobo_client.create_ticket(
+        Ticket(
+            title=title,
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="init", body="init", content_type="text/plain; charset=utf-8")],
+        )
     )
-    created = await otobo_client.create_ticket(req)
-    tid = int(created.TicketID)
-    assert tid > 0
+    tid = created.id
+    note_body = "added-note-body"
+    updated = await otobo_client.update_ticket(
+        Ticket(
+            id=tid,
+            articles=[Article(subject="note", body=note_body, content_type="text/plain; charset=utf-8")],
+        )
+    )
+    assert updated.id == tid
+    got = await otobo_client.get_ticket(ticket_id=tid)
+    assert any(note_body in (a.body or "") for a in got.articles)
 
-    got = await otobo_client.get_ticket(TicketGetRequest(TicketID=tid, AllArticles=1))
-    assert got.Title == title
-    assert got.Queue in ("Raw", "2")
-    assert got.State in ("new", "1")
-    assert got.Priority in ("5 very high", "5")
-    assert got.Type in ("Incident", "2")

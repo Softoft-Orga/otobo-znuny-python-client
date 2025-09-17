@@ -4,19 +4,20 @@ import logging
 import random
 import uuid
 from http import HTTPMethod
-from typing import Any, Iterable, Optional
+from typing import Any, Optional
 
-import httpx
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 
+from otobo.domain_models.ticket_models import Ticket, TicketSearch
+from otobo.mappers import build_ticket_create_request, parse_ticket_detail_output, build_ticket_get_request, \
+    build_ticket_update_request, build_ticket_search_request
 from otobo.domain_models.otobo_client_config import OTOBOClientConfig
 from otobo.domain_models.ticket_operation import TicketOperation
 from otobo.models.request_models import (
     TicketSearchRequest,
     TicketUpdateRequest,
-    TicketGetRequest,
-    TicketCreateRequest,
+    TicketGetRequest, TicketCreateRequest,
 )
 from otobo.models.response_models import (
     TicketSearchResponse,
@@ -40,7 +41,6 @@ class OTOBOClient:
 
     def _build_url(self, endpoint_name: str) -> str:
         return f"{self.base_url}/Webservice/{self.webservice_name}/{endpoint_name}"
-
 
     def _extract_error(self, payload: Any) -> Optional[OTOBOError]:
         if isinstance(payload, dict) and "Error" in payload:
@@ -90,7 +90,8 @@ class OTOBOClient:
             self._logger.error(f"[{request_id}] response validation error: {e}")
             return response_model.model_construct(**body)
 
-    async def create_ticket(self, request: TicketCreateRequest) -> TicketDetailOutput:
+    async def create_ticket(self, ticket: Ticket) -> Ticket:
+        request: TicketCreateRequest = build_ticket_create_request(ticket)
         response: TicketResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.CREATE,
@@ -99,9 +100,10 @@ class OTOBOClient:
         )
         if response.Ticket is None:
             raise RuntimeError("create returned no Ticket")
-        return response.Ticket
+        return parse_ticket_detail_output(response.Ticket)
 
-    async def get_ticket(self, request: TicketGetRequest) -> TicketDetailOutput:
+    async def get_ticket(self, ticket_id: int | str) -> Ticket:
+        request = build_ticket_get_request(int(ticket_id))
         response: TicketGetResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.GET,
@@ -111,9 +113,12 @@ class OTOBOClient:
         tickets = response.Ticket or []
         if len(tickets) != 1:
             raise RuntimeError(f"expected exactly one ticket, got {len(tickets)}")
-        return tickets[0]
+        return parse_ticket_detail_output(
+            tickets[0]
+        )
 
-    async def update_ticket(self, request: TicketUpdateRequest) -> TicketDetailOutput:
+    async def update_ticket(self, ticket: Ticket) -> Ticket:
+        request = build_ticket_update_request(ticket)
         response: TicketResponse = await self._send(
             HTTPMethod.PUT,
             TicketOperation.UPDATE,
@@ -122,9 +127,10 @@ class OTOBOClient:
         )
         if response.Ticket is None:
             raise RuntimeError("update returned no Ticket")
-        return response.Ticket
+        return parse_ticket_detail_output(response.Ticket)
 
-    async def search_tickets(self, request: TicketSearchRequest) -> list[int]:
+    async def search_tickets(self, ticket_search: TicketSearch) -> list[int]:
+        request = build_ticket_search_request(ticket_search)
         response: TicketSearchResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.SEARCH,
@@ -133,12 +139,10 @@ class OTOBOClient:
         )
         return response.TicketID or []
 
-    async def search_and_get(self, request: TicketSearchRequest, max_tickets: int = 3, shuffle: bool = False) -> list[
-        TicketDetailOutput]:
-        ids = await self.search_tickets(request)
-        if shuffle:
-            random.shuffle(ids)
-        tasks = [self.get_ticket(TicketGetRequest(TicketID=i)) for i in ids[:max_tickets]]
+    async def search_and_get(self, ticket_search: TicketSearch) -> list[
+        Ticket]:
+        ids = await self.search_tickets(ticket_search)
+        tasks = [self.get_ticket(i) for i in ids]
         return await asyncio.gather(*tasks)
 
     async def aclose(self) -> None:

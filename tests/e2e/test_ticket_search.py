@@ -1,128 +1,103 @@
 # tests/test_ticket_search.py
 import time
-from textwrap import dedent
 import pytest
 
-from otobo.models.ticket_models import TicketBase, ArticleDetail
-from otobo.models.request_models import TicketCreateRequest, TicketSearchRequest, TicketGetRequest
+from domain_models.ticket_models import Ticket, IdName, Article, TicketSearch
+
 
 @pytest.mark.asyncio
 async def test_search_returns_ids_for_created_tickets(otobo_client):
     prefix = f"search-{int(time.time())}"
-    reqs = [
-        TicketCreateRequest(
-            Ticket=TicketBase(
-                Title=f"{prefix}-a",
-                Queue="Raw",
-                State="new",
-                Priority="3 normal",
-                Type="Incident",
-                CustomerUser="customer@localhost.de",
-            ),
-            Article=ArticleDetail(
-                Subject="A",
-                Body="alpha",
-                ContentType="text/plain; charset=utf-8",
-            ),
-        ),
-        TicketCreateRequest(
-            Ticket=TicketBase(
-                Title=f"{prefix}-b",
-                Queue="Raw",
-                State="new",
-                Priority="3 normal",
-                Type="Incident",
-                CustomerUser="customer@localhost.de",
-            ),
-            Article=ArticleDetail(
-                Subject="B",
-                Body=dedent("""\
-                    body-b
-                """),
-                ContentType="text/plain; charset=utf-8",
-            ),
-        ),
-        TicketCreateRequest(
-            Ticket=TicketBase(
-                Title=f"{prefix}-c",
-                Queue="Raw",
-                State="new",
-                Priority="4 high",
-                Type="Incident",
-                CustomerUser="customer@localhost.de",
-            ),
-            Article=ArticleDetail(
-                Subject="C",
-                Body="charlie",
-                ContentType="text/plain; charset=utf-8",
-            ),
-        ),
-    ]
-    created = [await otobo_client.create_ticket(r) for r in reqs]
-    created_ids = {int(t.TicketID) for t in created}
-    assert all(i > 0 for i in created_ids)
+    t1 = await otobo_client.create_ticket(
+        Ticket(
+            title=f"{prefix}-a",
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="A", body="alpha", content_type="text/plain; charset=utf-8")],
+        )
+    )
+    t2 = await otobo_client.create_ticket(
+        Ticket(
+            title=f"{prefix}-b",
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="B", body="bravo", content_type="text/plain; charset=utf-8")],
+        )
+    )
+    t3 = await otobo_client.create_ticket(
+        Ticket(
+            title=f"{prefix}-c",
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="4 high"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="C", body="charlie", content_type="text/plain; charset=utf-8")],
+        )
+    )
+    created_ids = {t1.id, t2.id, t3.id}
+    assert all(i is not None and i > 0 for i in created_ids)
 
-    search_req = TicketSearchRequest(Title=[f"{prefix}-a", f"{prefix}-b", f"{prefix}-c"])
-    found_ids = set(await otobo_client.search_tickets(search_req))
+    search = TicketSearch(
+        titles=[f"{prefix}-a", f"{prefix}-b", f"{prefix}-c"],
+        queues=[IdName(name="Raw")],
+        use_subqueues=False,
+        limit=50,
+    )
+    found_ids = set(await otobo_client.search_tickets(search))
     assert created_ids.issubset(found_ids)
 
 @pytest.mark.asyncio
 async def test_search_and_get_returns_full_tickets(otobo_client):
     prefix = f"searchget-{int(time.time())}"
-    r1 = TicketCreateRequest(
-        Ticket=TicketBase(
-            Title=f"{prefix}-x",
-            Queue="Raw",
-            State="new",
-            Priority="3 normal",
-            Type="Incident",
-            CustomerUser="customer@localhost.de",
-        ),
-        Article=ArticleDetail(
-            Subject="X",
-            Body="x-body",
-            ContentType="text/plain; charset=utf-8",
-        ),
+    await otobo_client.create_ticket(
+        Ticket(
+            title=f"{prefix}-x",
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="X", body="x-body", content_type="text/plain; charset=utf-8")],
+        )
     )
-    r2 = TicketCreateRequest(
-        Ticket=TicketBase(
-            Title=f"{prefix}-y",
-            Queue="Raw",
-            State="new",
-            Priority="3 normal",
-            Type="Incident",
-            CustomerUser="customer@localhost.de",
-        ),
-        Article=ArticleDetail(
-            Subject="Y",
-            Body="y-body",
-            ContentType="text/plain; charset=utf-8",
-        ),
+    await otobo_client.create_ticket(
+        Ticket(
+            title=f"{prefix}-y",
+            queue=IdName(name="Raw"),
+            state=IdName(name="new"),
+            priority=IdName(name="3 normal"),
+            type=IdName(name="Incident"),
+            customer_user="customer@localhost.de",
+            articles=[Article(subject="Y", body="y-body", content_type="text/plain; charset=utf-8")],
+        )
     )
-    t1 = await otobo_client.create_ticket(r1)
-    t2 = await otobo_client.create_ticket(r2)
-    ids = {int(t1.TicketID), int(t2.TicketID)}
-    assert all(i > 0 for i in ids)
 
-    search_req = TicketSearchRequest(Title=[f"{prefix}-x", f"{prefix}-y"])
-    tickets = await otobo_client.search_and_get(search_req, max_tickets=5, shuffle=False)
-    numbers = {t.TicketNumber for t in tickets}
+    search = TicketSearch(
+        titles=[f"{prefix}-x", f"{prefix}-y"],
+        queues=[IdName(name="Raw")],
+        use_subqueues=False,
+        limit=10,
+    )
+    tickets = await otobo_client.search_and_get(search)
     assert len(tickets) >= 2
-    got_ids = set()
+    titles = {t.title for t in tickets}
+    assert {f"{prefix}-x", f"{prefix}-y"}.issubset(titles)
+    assert all(t.queue and isinstance(t.queue.name, str) for t in tickets)
     for t in tickets:
-        assert t.Title in {f"{prefix}-x", f"{prefix}-y"}
-        assert t.Queue in {"Raw", None} or isinstance(t.Queue, str)
-        arts = t.Article if isinstance(t.Article, list) else [t.Article]
-        assert arts and isinstance(arts[0].Body, str)
-        got_detail = await otobo_client.get_ticket(TicketGetRequest(TicketID=int(t.TicketID), AllArticles=1))
-        assert got_detail.TicketNumber in numbers
-        got_ids.add(int(t.TicketID))
-    assert ids.issubset(got_ids)
+        assert t.articles
+        assert isinstance(t.articles[0].body, str)
 
 @pytest.mark.asyncio
 async def test_search_no_results(otobo_client):
-    search_req = TicketSearchRequest(Title=[f"no-such-title-{int(time.time())}"])
-    ids = await otobo_client.search_tickets(search_req)
+    search = TicketSearch(titles=[f"no-such-title-{int(time.time())}"])
+    ids = await otobo_client.search_tickets(search)
     assert ids == []
-    details = await otobo_client.search_and_get(search_req, max_tickets=3)
+    details = await otobo_client.search_and_get(search)
     assert details == []

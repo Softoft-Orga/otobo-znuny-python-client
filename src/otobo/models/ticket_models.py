@@ -32,6 +32,8 @@ class DynamicFieldItem(BaseModel):
 
 
 class ArticleDetail(BaseModel):
+    ArticleID: Optional[int] = None
+    ArticleNumber: Optional[int] = None
     From: Optional[str] = None
     Subject: Optional[str] = None
     Body: Optional[str] = None
@@ -42,12 +44,10 @@ class ArticleDetail(BaseModel):
     MessageID: Optional[str] = None
     ChangeBy: Optional[int] = None
     CreateBy: Optional[int] = None
-    ArticleID: Optional[int] = None
-    ArticleNumber: Optional[int] = None
 
 
 class TicketDetailOutput(TicketBase):
-    Article: Union[ArticleDetail, List[ArticleDetail]]
-    DynamicField: List[DynamicFieldItem]
+    Article: List[ArticleDetail] | ArticleDetail | None = None
+    DynamicField: List[DynamicFieldItem] | None = None
 
 

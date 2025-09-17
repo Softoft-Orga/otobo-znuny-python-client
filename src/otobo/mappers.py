@@ -1,8 +1,8 @@
 from typing import Any
 
 from otobo.domain_models.ticket_models import Article, IdName, Ticket, TicketSearch
+from otobo.models.request_models import TicketCreateRequest, TicketUpdateRequest, TicketSearchRequest, TicketGetRequest
 from otobo.models.ticket_models import DynamicFieldItem, ArticleDetail, TicketDetailOutput, TicketBase
-from otobo import TicketCreateRequest, TicketUpdateRequest, TicketSearchRequest, TicketGetRequest
 
 
 def _dynamic_fields_dict_to_items(dynamic_fields: dict[str, Any]) -> list[DynamicFieldItem]:
@@ -51,10 +51,20 @@ def _split_idname_sequence(items: list[IdName] | None) -> tuple[list[int] | None
     return id_list, name_list
 
 
-def parse_ticket_detail_output(ticket_wire: TicketDetailOutput) -> Ticket:
-    wire_articles = ticket_wire.Article \
-        if isinstance(ticket_wire.Article, list) \
-        else [ticket_wire.Article] if ticket_wire.Article else []
+def parse_ticket_detail_output(ticket_wire: TicketDetailOutput | dict) -> Ticket:
+    if isinstance(ticket_wire, dict):
+        if 'Article' in ticket_wire:
+            if isinstance(ticket_wire['Article'], dict):
+                ticket_wire['Article'] = [ticket_wire['Article']]
+        ticket_wire = TicketDetailOutput.model_validate(ticket_wire, strict=False)
+    if isinstance(ticket_wire.Article, dict):
+        ticket_wire.Article = [ArticleDetail.model_validate(ticket_wire.Article)]
+    if 'Article' in ticket_wire or ticket_wire.Article:
+        wire_articles = ticket_wire.Article \
+            if isinstance(ticket_wire.Article, list) \
+            else [ticket_wire.Article] if ticket_wire.Article else []
+    else:
+        wire_articles = []
     return Ticket(
         id=ticket_wire.TicketID,
         number=ticket_wire.TicketNumber,
@@ -72,36 +82,53 @@ def parse_ticket_detail_output(ticket_wire: TicketDetailOutput) -> Ticket:
     )
 
 
-def build_ticket_base(ticket_domain: Ticket) -> TicketBase:
-    return TicketBase(
-        Title=ticket_domain.title,
-        QueueID=ticket_domain.queue.id if ticket_domain.queue else None,
-        Queue=ticket_domain.queue.name if ticket_domain.queue else None,
-        StateID=ticket_domain.state.id if ticket_domain.state else None,
-        State=ticket_domain.state.name if ticket_domain.state else None,
-        PriorityID=ticket_domain.priority.id if ticket_domain.priority else None,
-        Priority=ticket_domain.priority.name if ticket_domain.priority else None,
-        CustomerUser=ticket_domain.customer_user,
-        TypeID=ticket_domain.type.id if ticket_domain.type else None,
-        Type=ticket_domain.type.name if ticket_domain.type else None,
+def build_ticket_base(ticket: Ticket) -> TicketBase | None:
+    def id_name(v: IdName | None) -> tuple[int | None, str | None]:
+        return (v.id, v.name) if v else (None, None)
+
+    def has_any_attribute_set(ticket: TicketBase) -> bool:
+        return bool(ticket.model_dump(exclude_none=True))
+
+    queue_id, queue_name = id_name(ticket.queue)
+    state_id, state_name = id_name(ticket.state)
+    priority_id, priority_name = id_name(ticket.priority)
+    type_id, type_name = id_name(ticket.type)
+
+    ticket: TicketBase = TicketBase(
+        Title=ticket.title,
+        QueueID=queue_id,
+        Queue=queue_name,
+        StateID=state_id,
+        State=state_name,
+        PriorityID=priority_id,
+        Priority=priority_name,
+        CustomerUser=ticket.customer_user,
+        TypeID=type_id,
+        Type=type_name,
     )
+
+    if has_any_attribute_set(ticket):
+        return ticket
+    return None
 
 
 def build_ticket_create_request(ticket_domain: Ticket) -> TicketCreateRequest:
     ticket_base = build_ticket_base(ticket_domain)
-    article_wire = [_article_domain_to_wire(article) for article in
-                    ticket_domain.articles] if ticket_domain.articles else []
+    if len(ticket_domain.articles or []) > 1:
+        raise ValueError("Ticket creation supports only one article")
+    article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
     return TicketCreateRequest(Ticket=ticket_base, Article=article_wire)
 
 
 def build_ticket_update_request(ticket_domain: Ticket) -> TicketUpdateRequest:
     ticket_base = build_ticket_base(ticket_domain)
 
+    if len(ticket_domain.articles or []) > 1:
+        raise ValueError("Ticket creation supports only one article")
     article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
     return TicketUpdateRequest(
         Ticket=ticket_base,
         Article=article_wire,
-        DynamicField=[],
         TicketID=ticket_domain.id,
         TicketNumber=ticket_domain.number,
     )
@@ -124,6 +151,7 @@ def build_ticket_search_request(search_model: TicketSearch) -> TicketSearchReque
         Types=type_names,
         TypeIDs=type_ids,
         UseSubQueues=search_model.use_subqueues,
+        Limit=search_model.limit,
     )
 
 

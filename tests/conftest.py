@@ -8,7 +8,8 @@ import mariadb
 import pytest
 from dotenv import load_dotenv
 
-from otobo import OTOBOClientConfig, OTOBOClient
+from clients.otobo_client import OTOBOClient
+from domain_models.otobo_client_config import OTOBOClientConfig
 from otobo.domain_models.basic_auth_model import BasicAuth
 from otobo.domain_models.ticket_operation import TicketOperation
 @pytest.fixture(scope="session")

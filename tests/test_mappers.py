@@ -27,8 +27,9 @@ def test_build_ticket_create_request_roundtrip():
     assert req.Ticket.State == "new"
     assert req.Ticket.Priority == "3 normal"
     assert req.Ticket.Type == "Unclassified"
-    assert req.Article[0].Subject == "S"
-    assert req.Article[0].Body == "B"
+    articles = req.Article if isinstance(req.Article, list) else [req.Article] if req.Article else []
+    assert articles[0].Subject == "S"
+    assert articles[0].Body == "B"
     wire = TicketDetailOutput(
         Title=req.Ticket.Title,
         QueueID=req.Ticket.QueueID,
