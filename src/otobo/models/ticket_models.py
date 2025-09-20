@@ -2,7 +2,7 @@ from typing import Any, List, Union, Optional
 from pydantic import BaseModel
 
 
-class TicketBase(BaseModel):
+class OTOBOTicketBase(BaseModel):
     Title: Optional[str] = None
     QueueID: Optional[int] = None
     Queue: Optional[str] = None
@@ -46,7 +46,7 @@ class ArticleDetail(BaseModel):
     CreateBy: Optional[int] = None
 
 
-class TicketDetailOutput(TicketBase):
+class TicketDetailOutput(OTOBOTicketBase):
     Article: List[ArticleDetail] | ArticleDetail | None = None
     DynamicField: List[DynamicFieldItem] | None = None
 

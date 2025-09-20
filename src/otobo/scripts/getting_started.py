@@ -1,233 +1,288 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import json
-import re
+import os
 import secrets
 import string
-from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Optional
 
-import requests
 import typer
+import yaml
+from pydantic import BaseModel
 
-from setup_webservices import WebServiceGenerator
+from domain_models.otobo_client_config import OperationUrlMap
+from domain_models.ticket_operation import TicketOperation
+from otobo.scripts.cli_interface import OtoboConsole, CommandRunner
+from scripts.setup_webservices import WebServiceGenerator
 
-app = typer.Typer(add_completion=False, context_settings={"help_option_names": ["-h", "--help"]})
+app = typer.Typer()
 
-OPERATIONS: Dict[str, str] = {
-    "get": "TicketGet",
-    "search": "TicketSearch",
-    "create": "TicketCreate",
-    "update": "TicketUpdate",
+PermissionMap = {
+    "owner": "owner",
+    "move": "move_into",
+    "priority": "priority",
+    "create": "create",
+    "read": "ro",
+    "full": "rw",
 }
+from pathlib import Path
+import subprocess
 
 
-def _generate_password(length: int = 20) -> str:
-    alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
+def set_env_var(key: str, value: str, shell_rc: str = "~/.bashrc") -> None:
+    rc_file = Path(shell_rc).expanduser()
+    export_line = f'export {key}="{value}"\n'
+
+    # Read existing lines
+    if rc_file.exists():
+        lines = rc_file.read_text().splitlines()
+    else:
+        lines = []
+
+    # Remove old definition if present
+    lines = [line for line in lines if not line.strip().startswith(f"export {key}=")]
+    lines.append(export_line.strip())
+
+    # Write back
+    rc_file.write_text("\n".join(lines) + "\n")
+
+    # Apply immediately for current session
+    subprocess.run(f"export {key}='{value}'", shell=True, executable="/bin/bash")
+
+
+class SystemEnvironment:
+    def __init__(self, console_path: Path, webservices_dir: Path):
+        self.console_path = console_path
+        self.webservices_dir = webservices_dir
+
+    def build_command_runner(self) -> CommandRunner:
+        return CommandRunner.from_local(console_path=self.console_path)
+
+    def __str__(self) -> str:
+        return f"SystemEnvironment(console_path={self.console_path}, webservices_dir={self.webservices_dir})"
+
+    def is_valid_environment(self) -> bool:
+        return self.console_path.exists() and self.webservices_dir.exists()
+
+    @property
+    def ticket_system_name(self):
+        if "otobo" in str(self.console_path).lower():
+            return "otobo"
+        elif "znuny" in str(self.console_path).lower():
+            return "znuny"
+        elif "otrs" in str(self.console_path).lower():
+            return "otrs"
+        else:
+            return "Unknown"
+
+
+class DockerEnvironment(SystemEnvironment):
+    def __init__(self, container_name: str, console_path: Path,
+                 webservices_dir):
+        super().__init__(
+            console_path=console_path,
+            webservices_dir=webservices_dir
+        )
+        self.container_name = container_name
+
+    def build_command_runner(self) -> CommandRunner:
+        return CommandRunner.from_docker(container=self.container_name, console_path=self.console_path)
+
+    def __str__(self) -> str:
+        return f"DockerEnvironment(container_name={self.container_name}, console_path={self.console_path}, webservices_dir={self.webservices_dir})"
+
+    def is_valid_environment(self) -> bool:
+        return self.webservices_dir.exists()
 
 
 def _slug(s: str) -> str:
-    s2 = re.sub(r"[^A-Za-z0-9]+", "-", s).strip("-")
-    return s2 or "ws"
+    keep = string.ascii_letters + string.digits + "-"
+    s2 = "".join(ch if ch in keep else "-" for ch in s.strip().replace(" ", "-"))
+    s2 = s2.strip("-").lower()
+    while "--" in s2:
+        s2 = s2.replace("--", "-")
+    return s2
 
 
-def _email_local(s: str) -> str:
-    return re.sub(r"[^a-z0-9._+-]", "", s.lower())
+def _gen_random_domain() -> str:
+    name = _gen_password(8).lower()
+    return f"{name}.com"
 
 
-def _write_file(path: Path, data: str, force: bool) -> None:
+def _gen_password(n: int = 32) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(n))
+
+
+def _write_text(path: Path, content: str, force: bool) -> None:
     if path.exists() and not force:
-        typer.secho(f"File exists: {path}. Use --force to overwrite.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-    path.write_text(data, encoding="utf-8")
-    typer.secho(f"Wrote {path}", fg=typer.colors.GREEN)
+        raise FileExistsError(str(path))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
 
 
-def _prompt_yes(msg: str, default: bool = True) -> bool:
-    return typer.confirm(msg, default=default)
-
-
-def _http_post(url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    r = requests.post(url, json=payload, timeout=30)
+def _get_running_container(name_patterns: list[str]) -> Optional[str]:
     try:
-        return r.json()
+        out = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=5)
+        if out.returncode != 0:
+            return None
+        output_names = out.stdout.splitlines()
+        for name in name_patterns:
+            if any([name in n for n in output_names]):
+                return name
     except Exception:
-        return {"status": r.status_code, "text": r.text}
+        return None
+    return None
+
+
+CONSOLE_PATHS = [
+    Path("/opt/otobo/bin/otobo.Console.pl"),
+    Path("/opt/znuny/bin/otrs.Console.pl"),
+    Path("/opt/otrs/bin/otrs.Console.pl")
+]
+
+WEBSERVICES_PATHS = [
+    Path("/opt/otobo/var/webservices"),
+    Path("/opt/znuny/var/webservices"),
+    Path("/opt/otrs/var/webservices"),
+]
+
+OTOBO_DOCKER_WEBSERVICE_PATH = Path("/var/lib/docker/volumes/otobo_opt_otobo/_data/var/webservices")
+
+
+def _build_system_environment(console_path: Path, webservices_dir: Path,
+                              container_name: str | None = None) -> SystemEnvironment:
+    if container_name:
+        return DockerEnvironment(container_name=container_name, console_path=console_path,
+                                 webservices_dir=webservices_dir)
+    return SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
+
+
+def _detect_environment() -> SystemEnvironment | None:
+    container_name = _get_running_container(["otobo-web-1", "otobo_web_1"])
+    if container_name:
+        return DockerEnvironment(container_name=container_name, console_path=Path("/bin/otobo.Console.pl"),
+                                 webservices_dir=OTOBO_DOCKER_WEBSERVICE_PATH)
+    correct_console_paths = [console_path for console_path in CONSOLE_PATHS if console_path.exists()]
+    correct_ws_paths = [ws_path for ws_path in WEBSERVICES_PATHS if ws_path.exists()]
+    if len(correct_console_paths) == 1 and len(correct_ws_paths) == 1:
+        return SystemEnvironment(console_path=correct_console_paths[0], webservices_dir=correct_ws_paths[0])
+    return None
+
+
+class GettingStartedConfig(BaseModel):
+    base_url: str | None = None
+    env_kind: SystemEnvironment | None = None
+    webservice_name: str | None = None
+    username: str | None = None
+    user_password_env: str | None = None
+    queue_name: str | None = None
+    group_name: str | None = None
+    ops: OperationUrlMap | None = None
+    ws_file: Path | None = None
+
+
+class GettingStarted:
+    def __init__(self):
+        self.config = GettingStartedConfig()
+        self.console: OtoboConsole | None = None
+        self.system_environment: SystemEnvironment | None = None
+
+    def _manually_select_environment(self) -> SystemEnvironment | None:
+        typer.echo("Could not automatically detect OTOBO environment.")
+        use_docker = typer.confirm("Are you using OTOBO in Docker?")
+
+        if use_docker:
+            container_name = typer.prompt(
+                "Container name (In normal installation either otobo-web-1 or otobo_web_1",
+                default="otobo-web-1"
+            )
+            console_path = Path(typer.prompt("Console path inside container", default="/bin/otobo.Console.pl"))
+            webservices_dir = Path(
+                typer.prompt("Webservices directory full absolute path from host",
+                             default=OTOBO_DOCKER_WEBSERVICE_PATH))
+            env = DockerEnvironment(container_name=container_name, console_path=console_path,
+                                    webservices_dir=webservices_dir)
+            if not env.is_valid_environment():
+                typer.echo(f"Invalid Docker environment: {env}")
+                return None
+            return env
+        else:
+            console_path = Path(typer.prompt("Console path", default="/opt/otobo/bin/otobo.Console.pl"))
+            webservices_dir = Path(typer.prompt("Webservices directory", default="/opt/otobo/var/webservices"))
+            env = SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
+            if not env.is_valid_environment():
+                typer.echo(f"Invalid local environment: {env}")
+                return None
+            return env
+
+    def _create_user(self):
+        create_user = typer.confirm("Create a new user for Open Ticket AI?", default=True)
+        if create_user:
+            username = typer.prompt("Login", default="open_ticket_ai")
+            user_first = typer.prompt("First name", default="Open Ticket")
+            user_last = typer.prompt("Last name", default="AI")
+            user_email = typer.prompt("Email")
+            user_password = _gen_password()
+            cmd_result = self.console.add_user(
+                user_name=username,
+                first_name=user_first,
+                last_name=user_last,
+                email_address=user_email,
+                password=user_password
+            )
+            if not cmd_result.ok:
+                typer.echo(f"Error creating user: {cmd_result.err}")
+                raise typer.Exit(code=1)
+        else:
+            username = typer.prompt("Existing login")
+            user_password = typer.prompt("Password for existing user", hide_input=True)
+
+        self.config.username = username
+        self.config.user_password_env = "OTOBO_PASSWORD"
+        set_env_var("OTOBO_PASSWORD", user_password)
+
+    def run(self) -> None:
+        self.system_environment = _detect_environment()
+        if not self.system_environment or not self.system_environment.is_valid_environment():
+            self._manually_select_environment()
+        self.console = OtoboConsole(self.system_environment.build_command_runner())
+        typer.echo(f"Detected: {self.system_environment}")
+        self._create_user()
+        webservice_url = typer.prompt("Generic Interface URL",
+                                      default=f"http://localhost/{self.system_environment.ticket_system_name}/"
+                                              f"nph-genericinterface.pl")
+        ws_name = typer.prompt("Webservice name", default="OpenTicketAI")
+
+        queue_name = typer.prompt("Incoming tickets queue", default="Incoming Tickets")
+        group_name = typer.prompt("Queue group (create if missing)", default="users")
+        self.console.add_group(group_name)
+        self.console.add_queue(name=queue_name, group=group_name)
+        self.console.link_user_to_group(user_name=self.config.username, group_name=group_name,
+                                        permission=str(PermissionMap["full"]))
+        ops_choices = [
+            (TicketOperation.CREATE, True),
+            (TicketOperation.UPDATE, True),
+            (TicketOperation.SEARCH, True),
+            (TicketOperation.GET, True),
+        ]
+        ops = []
+        for op, d in ops_choices:
+            if typer.confirm(f"Enable {op}?", default=d):
+                ops.append(op)
+        WebServiceGenerator().write_yaml_to_file(
+            restricted_user=self.config.username,
+            webservice_name=self.config.webservice_name,
+            enabled_operations=ops,
+            file_path=self.system_environment.webservices_dir / f"{ws_name}.yml",
+        )
+        cfg_yaml = Path("config.yaml")
+        cfg_yaml.write_text(self.config.model_dump())
 
 
 @app.command()
-def bootstrap(
-        base_url: str = typer.Option(..., "--base-url", "-u",
-                                     help="Server base URL, e.g. http://host/otobo/nph-genericinterface.pl"),
-        name: str = typer.Option(..., "--name", "-n", help="Webservice name (letters, numbers, dashes)"),
-        op: List[str] = typer.Option(..., "--op", "-o", help="Repeat for each: get, search, create, update",
-                                     case_sensitive=False),
-        restrict_user: Optional[str] = typer.Option(None, "--user", help="Agent login to restrict access to"),
-        first_name: Optional[str] = typer.Option(None, "--first-name"),
-        last_name: Optional[str] = typer.Option(None, "--last-name"),
-        email: Optional[str] = typer.Option(None, "--email"),
-        version: str = typer.Option("11.0.0", "--version", help="FrameworkVersion"),
-        out: Optional[Path] = typer.Option(None, "--out", "-f", help="Output YAML file; defaults to <name>.yml"),
-        write_env: bool = typer.Option(False, "--write-env/--no-write-env", help="Write .env with server and username"),
-        env_file: Path = typer.Option(Path(".env"), "--env-file"),
-        force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
-        run_test: bool = typer.Option(True, "--test", help="Attempt live HTTP test after setup"),
-):
-    ops_clean = [s.lower().strip() for s in op if s.lower().strip() in OPERATIONS]
-    if not ops_clean:
-        typer.secho("No valid operations provided.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-
-    slug_name = _slug(name)
-    default_first = name
-    default_last = "User"
-    default_email = f"{_email_local(slug_name)}@localhost.com"
-
-    create_agent = False
-    if not restrict_user:
-        create_agent = _prompt_yes("Create a new Agent for this webservice?", True)
-        if create_agent:
-            restrict_user = typer.prompt("Agent login", default=f"{slug_name}_ws".lower())
-            first_name = typer.prompt("First name", default=default_first)
-            last_name = typer.prompt("Last name", default=default_last)
-            email = typer.prompt("Email", default=default_email)
-        else:
-            restrict_user = typer.prompt("Existing agent login to use", default="root@localhost")
-    else:
-        if not first_name:
-            first_name = default_first
-        if not last_name:
-            last_name = default_last
-        if not email:
-            email = default_email
-
-    enabled_ops: dict[str, None] = {OPERATIONS[o]: None for o in ops_clean}
-    generator = WebServiceGenerator()
-    yaml_content = generator.generate_yaml(
-        webservice_name=name,
-        enabled_operations=enabled_ops,
-        restricted_user=restrict_user,
-        framework_version=version,
-    )
-
-    target = out or Path(f"{slug_name}.yml")
-    _write_file(target, yaml_content, force)
-
-    typer.echo("Command to add webservice:")
-    typer.echo(f"otobo.Console.pl Admin::WebService::Add --Name {name} --Config {target}")
-
-    created_password = None
-    if create_agent:
-        created_password = _generate_password()
-        typer.echo("Command to create agent:")
-        typer.echo(
-            f"otobo.Console.pl Admin::User::Add --UserFirstname \"{first_name}\" --UserLastname \"{last_name}\" "
-            f"--UserLogin \"{restrict_user}\" --UserPassword \"{created_password}\" --UserEmail \"{email}\""
-        )
-
-    make_gq = _prompt_yes("Create a new Group and Queue for testing?", True)
-    group_name = None
-    queue_name = None
-    if make_gq:
-        group_name = typer.prompt("Group name", default=f"{slug_name}-group")
-        queue_name = typer.prompt("Queue name", default=f"{slug_name}::Test")
-        typer.echo("Commands to create group and queue:")
-        typer.echo(f"otobo.Console.pl Admin::Group::Add --Name \"{group_name}\" --Valid 1")
-        typer.echo(f"otobo.Console.pl Admin::Queue::Add --Name \"{queue_name}\" --Group \"{group_name}\" --Valid 1")
-    else:
-        group_name = typer.prompt("Existing group name", default="users")
-        queue_name = typer.prompt("Existing queue name", default="Raw")
-
-    grant_rights = _prompt_yes("Grant agent rights on the group (ro,note,create,move_into)?", True)
-    if grant_rights:
-        typer.echo("Command to link agent to group with permissions:")
-        typer.echo(
-            f"otobo.Console.pl Admin::Group::UserLink --group-name \"{group_name}\" --user-name \"{restrict_user}\" --permission \"ro,move_into,create,note\""
-        )
-
-    if write_env:
-        lines = [f"OTOBO_SERVER_URL={base_url}", f"OTOBO_WEBSERVICE_NAME={name}", f"OTOBO_QUEUE={queue_name}"]
-        lines.append(f"OTOBO_USERNAME={restrict_user}")
-        _write_file(env_file, "\n".join(lines) + "\n", force)
-
-    if not run_test:
-        return
-
-    op_urls = {k: f"{base_url.rstrip('/')}/Webservice/{name}/{v}" for k, v in OP_PATHS.items() if k in enabled_ops}
-
-    auth_login = restrict_user
-    auth_password = created_password or typer.prompt("Password for the agent to authenticate HTTP calls",
-                                                     hide_input=True)
-
-    created_ticket_number: Optional[str] = None
-    created_ticket_id: Optional[int] = None
-
-    if "TicketCreate" in enabled_ops:
-        payload_create = {
-            "UserLogin": auth_login,
-            "Password": auth_password,
-            "Ticket": {
-                "Title": f"{name} setup test",
-                "Queue": queue_name,
-                "State": "open",
-                "Priority": "3 normal",
-                "CustomerUser": "test@example.com",
-            },
-            "Article": {
-                "Subject": "Setup test",
-                "Body": "Initial ticket via webservice",
-                "MimeType": "text/plain",
-                "Charset": "utf-8",
-            },
-        }
-        res_c = _http_post(op_urls.get("TicketCreate", ""), payload_create)
-        typer.echo(f"Create response: {json.dumps(res_c, ensure_ascii=False)}")
-        created_ticket_number = res_c.get("TicketNumber")
-        created_ticket_id = res_c.get("TicketID")
-
-    if "TicketUpdate" in enabled_ops:
-        if not created_ticket_id:
-            if created_ticket_number and "TicketSearch" in enabled_ops:
-                payload_search = {"UserLogin": auth_login, "Password": auth_password,
-                                  "TicketNumber": created_ticket_number}
-                res_s = _http_post(op_urls.get("TicketSearch", ""), payload_search)
-                ids = res_s.get("TicketIDs") or []
-                if isinstance(ids, list) and ids:
-                    created_ticket_id = ids[0]
-            if not created_ticket_id:
-                num = typer.prompt("TicketNumber to update (no create op available or failed)",
-                                   default=created_ticket_number or "")
-                payload_search2 = {"UserLogin": auth_login, "Password": auth_password, "TicketNumber": num}
-                res_s2 = _http_post(op_urls.get("TicketSearch", ""), payload_search2)
-                ids2 = res_s2.get("TicketIDs") or []
-                if isinstance(ids2, list) and ids2:
-                    created_ticket_id = ids2[0]
-        if created_ticket_id:
-            payload_update = {
-                "UserLogin": auth_login,
-                "Password": auth_password,
-                "TicketID": created_ticket_id,
-                "Ticket": {"Priority": "4 high"},
-                "Article": {"Subject": "Update", "Body": "Update via webservice"},
-            }
-            res_u = _http_post(op_urls.get("TicketUpdate", ""), payload_update)
-            typer.echo(f"Update response: {json.dumps(res_u, ensure_ascii=False)}")
-
-    tn_for_get = created_ticket_number
-    if not tn_for_get:
-        tn_for_get = typer.prompt("TicketNumber to fetch", default=created_ticket_number or "")
-    if tn_for_get and "TicketSearch" in enabled_ops:
-        res_s3 = _http_post(op_urls.get("TicketSearch", ""),
-                            {"UserLogin": auth_login, "Password": auth_password, "TicketNumber": tn_for_get})
-        typer.echo(f"Search response: {json.dumps(res_s3, ensure_ascii=False)}")
-        ids3 = res_s3.get("TicketIDs") or []
-        tid = ids3[0] if isinstance(ids3, list) and ids3 else None
-        if tid and "TicketGet" in enabled_ops:
-            res_g = _http_post(op_urls.get("TicketGet", ""),
-                               {"UserLogin": auth_login, "Password": auth_password, "TicketID": tid})
-            typer.echo(f"Get response: {json.dumps(res_g, ensure_ascii=False)}")
+def getting_started():
+    GettingStarted().run()
 
 
 if __name__ == "__main__":

@@ -3,6 +3,9 @@ from typing import Any
 
 
 class TicketOperation(Enum):
+    operation_type: str
+    value: str
+
     CREATE = ("TicketCreate", "Ticket::TicketCreate")
     SEARCH = ("TicketSearch", "Ticket::TicketSearch")
     GET = ("TicketGet", "Ticket::TicketGet")

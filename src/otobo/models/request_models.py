@@ -2,7 +2,8 @@ from typing import Optional, Union, List, Dict, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from otobo.models.ticket_models import TicketBase, ArticleDetail, DynamicFieldItem
+from otobo.models.ticket_models import OTOBOTicketBase
+from otobo.models.ticket_models import ArticleDetail, DynamicFieldItem
 
 
 class AuthData(BaseModel):
@@ -41,7 +42,7 @@ class TicketGetRequest(BaseModel):
 
 
 class TicketCreateRequest(BaseModel):
-    Ticket: TicketBase | None = None
+    Ticket: OTOBOTicketBase | None = None
     Article: ArticleDetail | list[ArticleDetail] | None = None
     DynamicField: list[DynamicFieldItem] | None = None
 

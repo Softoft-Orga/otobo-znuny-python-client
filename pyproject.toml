@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "otobo"
-version = "4.1.6"
-description = "Python client library for the OTOBO REST API"
+name = "otobo_znuny"
+version = "1.0.0"
+description = "Python client library for the OTOBO / Znuny REST API"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Tobias Bück", email = "tab@softoft.de" }]
@@ -28,7 +28,9 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.2",
     "requests>=2.32.5",
-    "typer>=0.17.4",
+    "typer>=0.19.1",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-requests>=2.32.4.20250913",
 ]
 
 [project.optional-dependencies]
@@ -48,3 +50,17 @@ where = ["src"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+    "ruff>=0.13.1",
+    "mariadb>=1.1.13",
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+[mypy-mariadb]
+ignore_missing_imports = true

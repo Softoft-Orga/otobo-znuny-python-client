@@ -2,43 +2,44 @@
 import time
 import pytest
 
-from domain_models.ticket_models import Ticket, IdName, Article, TicketSearch
+from otobo.clients.otobo_client import OTOBOZnunyClient
+from otobo.domain_models.ticket_models import TicketBase, IdName, Article, TicketSearch, TicketCreate
 
 
 @pytest.mark.asyncio
-async def test_search_returns_ids_for_created_tickets(otobo_client):
+async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyClient) -> None:
     prefix = f"search-{int(time.time())}"
     t1 = await otobo_client.create_ticket(
-        Ticket(
+        TicketCreate(
             title=f"{prefix}-a",
             queue=IdName(name="Raw"),
             state=IdName(name="new"),
             priority=IdName(name="3 normal"),
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
-            articles=[Article(subject="A", body="alpha", content_type="text/plain; charset=utf-8")],
+            article=Article(subject="A", body="alpha", content_type="text/plain; charset=utf-8"),
         )
     )
     t2 = await otobo_client.create_ticket(
-        Ticket(
+        TicketCreate(
             title=f"{prefix}-b",
             queue=IdName(name="Raw"),
             state=IdName(name="new"),
             priority=IdName(name="3 normal"),
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
-            articles=[Article(subject="B", body="bravo", content_type="text/plain; charset=utf-8")],
+            article=Article(subject="B", body="bravo", content_type="text/plain; charset=utf-8"),
         )
     )
     t3 = await otobo_client.create_ticket(
-        Ticket(
+        TicketCreate(
             title=f"{prefix}-c",
             queue=IdName(name="Raw"),
             state=IdName(name="new"),
             priority=IdName(name="4 high"),
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
-            articles=[Article(subject="C", body="charlie", content_type="text/plain; charset=utf-8")],
+            article=Article(subject="C", body="charlie", content_type="text/plain; charset=utf-8"),
         )
     )
     created_ids = {t1.id, t2.id, t3.id}
@@ -54,28 +55,28 @@ async def test_search_returns_ids_for_created_tickets(otobo_client):
     assert created_ids.issubset(found_ids)
 
 @pytest.mark.asyncio
-async def test_search_and_get_returns_full_tickets(otobo_client):
+async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClient) -> None:
     prefix = f"searchget-{int(time.time())}"
     await otobo_client.create_ticket(
-        Ticket(
+        TicketCreate(
             title=f"{prefix}-x",
             queue=IdName(name="Raw"),
             state=IdName(name="new"),
             priority=IdName(name="3 normal"),
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
-            articles=[Article(subject="X", body="x-body", content_type="text/plain; charset=utf-8")],
+            article=Article(subject="X", body="x-body", content_type="text/plain; charset=utf-8"),
         )
     )
     await otobo_client.create_ticket(
-        Ticket(
+        TicketCreate(
             title=f"{prefix}-y",
             queue=IdName(name="Raw"),
             state=IdName(name="new"),
             priority=IdName(name="3 normal"),
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
-            articles=[Article(subject="Y", body="y-body", content_type="text/plain; charset=utf-8")],
+            article=Article(subject="Y", body="y-body", content_type="text/plain; charset=utf-8"),
         )
     )
 
@@ -92,10 +93,10 @@ async def test_search_and_get_returns_full_tickets(otobo_client):
     assert all(t.queue and isinstance(t.queue.name, str) for t in tickets)
     for t in tickets:
         assert t.articles
-        assert isinstance(t.articles[0].body, str)
+        assert isinstance(t.get_articles()[0].body, str)
 
 @pytest.mark.asyncio
-async def test_search_no_results(otobo_client):
+async def test_search_no_results(otobo_client: OTOBOZnunyClient) -> None:
     search = TicketSearch(titles=[f"no-such-title-{int(time.time())}"])
     ids = await otobo_client.search_tickets(search)
     assert ids == []

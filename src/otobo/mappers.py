@@ -1,8 +1,27 @@
+import logging
+from datetime import datetime
 from typing import Any
 
-from otobo.domain_models.ticket_models import Article, IdName, Ticket, TicketSearch
+from pydantic import BaseModel
+
+from otobo.domain_models.ticket_models import Article, IdName, TicketBase, TicketSearch
+from otobo.domain_models.ticket_models import TicketUpdate, Ticket, TicketCreate
 from otobo.models.request_models import TicketCreateRequest, TicketUpdateRequest, TicketSearchRequest, TicketGetRequest
-from otobo.models.ticket_models import DynamicFieldItem, ArticleDetail, TicketDetailOutput, TicketBase
+from otobo.models.ticket_models import DynamicFieldItem, ArticleDetail, TicketDetailOutput, OTOBOTicketBase
+
+logger = logging.getLogger(__name__)
+
+def try_parsing_datetime(value: str | None) -> datetime | None:
+    if value is None:
+        return None
+
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    logger.warning(f"Failed to parse datetime: {value}")
+    return None
 
 
 def _dynamic_fields_dict_to_items(dynamic_fields: dict[str, Any]) -> list[DynamicFieldItem]:
@@ -30,8 +49,8 @@ def _article_wire_to_domain(article_wire: ArticleDetail) -> Article:
         subject=article_wire.Subject,
         body=article_wire.Body,
         content_type=article_wire.ContentType,
-        created_at=article_wire.CreateTime,
-        changed_at=article_wire.ChangeTime,
+        created_at=try_parsing_datetime(article_wire.CreateTime),
+        changed_at=try_parsing_datetime(article_wire.ChangeTime),
         article_id=article_wire.ArticleID,
         article_number=article_wire.ArticleNumber,
     )
@@ -59,7 +78,7 @@ def parse_ticket_detail_output(ticket_wire: TicketDetailOutput | dict) -> Ticket
         ticket_wire = TicketDetailOutput.model_validate(ticket_wire, strict=False)
     if isinstance(ticket_wire.Article, dict):
         ticket_wire.Article = [ArticleDetail.model_validate(ticket_wire.Article)]
-    if 'Article' in ticket_wire or ticket_wire.Article:
+    if ticket_wire.Article:
         wire_articles = ticket_wire.Article \
             if isinstance(ticket_wire.Article, list) \
             else [ticket_wire.Article] if ticket_wire.Article else []
@@ -76,25 +95,27 @@ def parse_ticket_detail_output(ticket_wire: TicketDetailOutput | dict) -> Ticket
         owner=_to_idname(ticket_wire.OwnerID, ticket_wire.Owner),
         customer_id=ticket_wire.CustomerID,
         customer_user=ticket_wire.CustomerUser,
-        created_at=ticket_wire.Created,
-        changed_at=ticket_wire.Changed,
+        created_at=try_parsing_datetime(ticket_wire.Created),
+        changed_at=try_parsing_datetime(ticket_wire.Changed),
         articles=[_article_wire_to_domain(a) for a in wire_articles],
     )
 
 
-def build_ticket_base(ticket: Ticket) -> TicketBase | None:
+def build_ticket_base(ticket: TicketBase) -> OTOBOTicketBase | None:
+    assert isinstance(ticket, TicketBase)
+
     def id_name(v: IdName | None) -> tuple[int | None, str | None]:
         return (v.id, v.name) if v else (None, None)
 
-    def has_any_attribute_set(ticket: TicketBase) -> bool:
-        return bool(ticket.model_dump(exclude_none=True))
+    def has_any_attribute_set(otobo_ticket_base: BaseModel) -> bool:
+        return bool(otobo_ticket_base.model_dump(exclude_none=True))
 
     queue_id, queue_name = id_name(ticket.queue)
     state_id, state_name = id_name(ticket.state)
     priority_id, priority_name = id_name(ticket.priority)
     type_id, type_name = id_name(ticket.type)
 
-    ticket: TicketBase = TicketBase(
+    otobo_ticket: OTOBOTicketBase = OTOBOTicketBase(
         Title=ticket.title,
         QueueID=queue_id,
         Queue=queue_name,
@@ -107,25 +128,20 @@ def build_ticket_base(ticket: Ticket) -> TicketBase | None:
         Type=type_name,
     )
 
-    if has_any_attribute_set(ticket):
-        return ticket
+    if has_any_attribute_set(otobo_ticket):
+        return otobo_ticket
     return None
 
 
-def build_ticket_create_request(ticket_domain: Ticket) -> TicketCreateRequest:
+def build_ticket_create_request(ticket_domain: TicketCreate) -> TicketCreateRequest:
     ticket_base = build_ticket_base(ticket_domain)
-    if len(ticket_domain.articles or []) > 1:
-        raise ValueError("Ticket creation supports only one article")
-    article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
+    article_wire = _article_domain_to_wire(ticket_domain.article) if ticket_domain.article else None
     return TicketCreateRequest(Ticket=ticket_base, Article=article_wire)
 
 
-def build_ticket_update_request(ticket_domain: Ticket) -> TicketUpdateRequest:
+def build_ticket_update_request(ticket_domain: TicketUpdate) -> TicketUpdateRequest:
     ticket_base = build_ticket_base(ticket_domain)
-
-    if len(ticket_domain.articles or []) > 1:
-        raise ValueError("Ticket creation supports only one article")
-    article_wire = _article_domain_to_wire(ticket_domain.articles[0]) if ticket_domain.articles else None
+    article_wire = _article_domain_to_wire(ticket_domain.article) if ticket_domain.article else None
     return TicketUpdateRequest(
         Ticket=ticket_base,
         Article=article_wire,

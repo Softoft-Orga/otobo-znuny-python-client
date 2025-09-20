@@ -1,10 +1,13 @@
+from abc import abstractmethod, ABC
 from datetime import datetime
-from typing import Any
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
+
 
 class IdName(BaseModel):
     id: int | None = None
     name: str | None = None
+
 
 class Article(BaseModel):
     from_addr: str | None = None
@@ -17,8 +20,8 @@ class Article(BaseModel):
     article_id: int | None = None
     article_number: int | None = None
 
-class Ticket(BaseModel):
-    id: int | None = None
+
+class TicketBase(BaseModel, ABC):
     number: str | None = None
     title: str | None = None
     queue: IdName | None = None
@@ -30,7 +33,34 @@ class Ticket(BaseModel):
     customer_user: str | None = None
     created_at: datetime | None = None
     changed_at: datetime | None = None
-    articles: list[Article] = Field(default_factory=list)
+
+    @abstractmethod
+    def get_articles(self) -> list[Article]:
+        pass
+
+
+class TicketCreate(TicketBase):
+    article: Article | None = None
+
+    def get_articles(self) -> list[Article]:
+        return [self.article] if self.article else []
+
+
+class TicketUpdate(TicketBase):
+    id: int | None = None
+    article: Article | None = None
+
+    def get_articles(self) -> list[Article]:
+        return [self.article] if self.article else []
+
+
+class Ticket(TicketBase):
+    id: int
+    articles: list[Article] = []
+
+    def get_articles(self) -> list[Article]:
+        return self.articles or []
+
 
 class TicketSearch(BaseModel):
     numbers: list[str] | None = None

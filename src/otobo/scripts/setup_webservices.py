@@ -9,7 +9,8 @@ import typer
 import yaml
 from pydantic import BaseModel
 
-from otobo import TicketOperation
+from otobo.domain_models.ticket_operation import TicketOperation
+from scripts.webservice_util import generate_enabled_operations_list
 
 
 class NoAliasDumper(yaml.SafeDumper):
@@ -64,28 +65,23 @@ class WebServiceGenerator:
         ),
         TicketOperation.SEARCH: OperationSpec(
             op=TicketOperation.SEARCH,
-            route="ticket/search",
+            route="ticket-search",
             description="Searches for tickets based on criteria.",
             methods=["POST"],
             include_ticket_data="0",
         ),
         TicketOperation.UPDATE: OperationSpec(
             op=TicketOperation.UPDATE,
-            route="ticket/update",
+            route="ticket-update",
             description="Updates an existing ticket.",
             methods=["PUT"],
             include_ticket_data="1",
         ),
     }
 
-    def _create_operation_configs(self, s: OperationSpec, inbound: Dict[str, Any]) -> dict[str, dict]:
-        return ProviderOperationConfig(
-            Type=s.op.type,
-            Description=s.description,
-            IncludeTicketData=s.include_ticket_data,
-            MappingInbound=inbound,
-            MappingOutbound=self._outbound_mapping(),
-        ).model_dump()
+    def __init__(self):
+        self.route_mapping: dict[str, dict] = {}
+        self.operations: dict[str, dict] = {}
 
     def generate_yaml(
             self,
@@ -95,20 +91,17 @@ class WebServiceGenerator:
             framework_version: str = "11.0.0",
     ) -> str:
         name = self._validate_name(webservice_name)
-        specs = [self.DEFAULT_SPECS[o] for o in enabled_operations if o in self.DEFAULT_SPECS]
-        if not specs:
+        enabled_operation_specs: list[OperationSpec] = [self.DEFAULT_SPECS[o] for o in enabled_operations if
+                                                        o in self.DEFAULT_SPECS]
+        if not enabled_operation_specs:
             raise ValueError("No operations enabled.")
-        inbound_base = self._inbound_mapping(restricted_user)
+        inbound_base = self._create_inbound_mapping(restricted_user)
         description = self._description(name, restricted_user)
-        route_mapping: dict[str, dict] = {}
-        operations: dict[str, dict] = {}
-        for s in specs:
+
+        for s in enabled_operation_specs:
             inbound = copy.deepcopy(inbound_base)
-            route_mapping[s.provider_name] = RouteMappingConfig(
-                Route=f"/{s.route}",
-                RequestMethod=s.methods,
-            ).model_dump()
-            operations[s.provider_name] = self._create_operation_configs(s, inbound)
+            self._add_operation(s, inbound)
+
         data = {
             "Debugger": {"DebugThreshold": "debug", "TestMode": "0"},
             "Description": description,
@@ -120,15 +113,41 @@ class WebServiceGenerator:
                         "MaxLength": "1000000",
                         "KeepAlive": "",
                         "AdditionalHeaders": "",
-                        "RouteOperationMapping": route_mapping,
+                        "RouteOperationMapping": self.route_mapping,
                     },
                 },
-                "Operation": operations,
+                "Operation": self.operations,
             },
             "RemoteSystem": "",
             "Requester": {"Transport": {"Type": ""}},
         }
         return yaml.dump(data, sort_keys=False, indent=2, Dumper=NoAliasDumper, explicit_start=True)
+
+    def write_yaml_to_file(self, webservice_name: str,
+                           enabled_operations: List[TicketOperation],
+                           restricted_user: str | None = None,
+                           framework_version: str = "11.0.0",
+                           file_path: str | Path = "webservice_config.yml") -> None:
+        out = self.generate_yaml(
+            webservice_name=webservice_name,
+            enabled_operations=enabled_operations,
+            restricted_user=restricted_user,
+            framework_version=framework_version,
+        )
+        Path(file_path).write_text(out, encoding="utf-8")
+
+    def _add_operation(self, s: OperationSpec, inbound: Dict[str, Any]) -> None:
+        self.route_mapping[s.op.operation_type] = RouteMappingConfig(
+            Route=f"/{s.route}",
+            RequestMethod=s.methods,
+        ).model_dump()
+        self.operations[s.provider_name] = ProviderOperationConfig(
+            Type=s.op.type,
+            Description=s.description,
+            IncludeTicketData=s.include_ticket_data,
+            MappingInbound=inbound,
+            MappingOutbound=self._outbound_mapping(),
+        ).model_dump()
 
     def _validate_name(self, name: str) -> str:
         if not name:
@@ -142,45 +161,36 @@ class WebServiceGenerator:
             return f"Webservice for '{name}'. Restricted to user '{user}'."
         return f"Webservice for '{name}'. Accessible by all permitted agents."
 
-    def _inbound_mapping(self, restricted_user: str | None) -> Dict[str, Any]:
+    def _create_simple_empty_mapping(self) -> Dict[str, Any]:
+        return {"Type": "Simple", "Config": {"KeyMapDefault": self._create_empty_mapping(),
+                                             "ValueMapDefault": self._create_empty_mapping()}}
+
+    def _create_empty_mapping(self) -> Dict[str, Any]:
+        return {"MapType": "Keep", "MapTo": ""}
+
+    def _create_inbound_mapping(self, restricted_user: str | None) -> Dict[str, Any]:
         if restricted_user:
             return {
                 "Type": "Simple",
                 "Config": {
-                    "KeyMapDefault": {"MapType": "Keep", "MapTo": ""},
+                    "KeyMapDefault": self._create_empty_mapping(),
                     "KeyMapExact": {"UserLogin": "UserLogin"},
                     "ValueMap": {"UserLogin": {"ValueMapRegEx": {".*": restricted_user}}},
-                    "ValueMapDefault": {"MapType": "Keep", "MapTo": ""},
+                    "ValueMapDefault": self._create_empty_mapping(),
                 },
             }
-        return {
-            "Type": "Simple",
-            "Config": {
-                "KeyMapDefault": {"MapType": "Keep", "MapTo": ""},
-                "ValueMapDefault": {"MapType": "Keep", "MapTo": ""},
-            },
-        }
+        return self._create_simple_empty_mapping()
 
     def _outbound_mapping(self) -> Dict[str, Any]:
-        return {
-            "Type": "Simple",
-            "Config": {
-                "KeyMapDefault": {"MapTo": "", "MapType": "Keep"},
-                "ValueMapDefault": {"MapTo": "", "MapType": "Keep"},
-            },
-        }
+        return self._create_simple_empty_mapping()
 
 
 @app.command()
 def generate(
         name: Annotated[str, typer.Option("--name", rich_help_panel="Required")],
-        enable_ticket_get: Annotated[bool, typer.Option("--enable-ticket-get", rich_help_panel="Operations")] = False,
-        enable_ticket_search: Annotated[
-            bool, typer.Option("--enable-ticket-search", rich_help_panel="Operations")] = False,
-        enable_ticket_create: Annotated[
-            bool, typer.Option("--enable-ticket-create", rich_help_panel="Operations")] = False,
-        enable_ticket_update: Annotated[
-            bool, typer.Option("--enable-ticket-update", rich_help_panel="Operations")] = False,
+        enabled_operations_raw: List[str] = typer.Option(..., "--op", "-o",
+                                                         help="Repeat for each: get, search, create, update",
+                                                         case_sensitive=False),
         allow_user: Annotated[
             str | None, typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
         allow_all_agents: Annotated[bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")] = False,
@@ -193,31 +203,30 @@ def generate(
     if allow_user and allow_all_agents:
         typer.secho("Error: --allow-user and --allow-all-agents are mutually exclusive.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    enabled: list[TicketOperation] = [
-        op
-        for op, ok in [
-            (TicketOperation.GET, enable_ticket_get),
-            (TicketOperation.SEARCH, enable_ticket_search),
-            (TicketOperation.CREATE, enable_ticket_create),
-            (TicketOperation.UPDATE, enable_ticket_update),
-        ]
-        if ok
-    ]
+    enabled_operations: list[TicketOperation] = generate_enabled_operations_list(enabled_operations_raw)
     gen = WebServiceGenerator()
     try:
-        out = gen.generate_yaml(
-            webservice_name=name,
-            enabled_operations=enabled,
-            restricted_user=allow_user if allow_user else None,
-            framework_version=version,
-        )
+
         if file:
-            Path(file).write_text(out, encoding="utf-8")
+            gen.write_yaml_to_file(
+                webservice_name=name,
+                enabled_operations=enabled_operations,
+                restricted_user=allow_user if allow_user else None,
+                framework_version=version,
+                file_path=file,
+            )
             typer.secho("Successfully generated webservice configuration.", fg=typer.colors.GREEN)
             typer.secho(f"File: {file}")
         else:
+            out = gen.generate_yaml(
+                webservice_name=name,
+                enabled_operations=enabled_operations,
+                restricted_user=allow_user if allow_user else None,
+                framework_version=version,
+            )
             typer.secho("--- Generated YAML ---", bold=True)
-            print(out)
+            typer.echo(out)
+
     except ValueError as e:
         typer.secho(f"Error: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)

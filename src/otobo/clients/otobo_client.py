@@ -1,37 +1,34 @@
 import asyncio
 import json
 import logging
-import random
 import uuid
 from http import HTTPMethod
-from typing import Any, Optional
+from types import TracebackType
+from typing import Any, Optional, Self
 
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 
-from otobo.domain_models.ticket_models import Ticket, TicketSearch
+from otobo.domain_models.otobo_client_config import OTOBOClientConfig
+from otobo.domain_models.ticket_models import TicketBase, TicketSearch, TicketUpdate, TicketCreate, Ticket
+from otobo.domain_models.ticket_operation import TicketOperation
 from otobo.mappers import build_ticket_create_request, parse_ticket_detail_output, build_ticket_get_request, \
     build_ticket_update_request, build_ticket_search_request
-from otobo.domain_models.otobo_client_config import OTOBOClientConfig
-from otobo.domain_models.ticket_operation import TicketOperation
 from otobo.models.request_models import (
-    TicketSearchRequest,
-    TicketUpdateRequest,
-    TicketGetRequest, TicketCreateRequest,
+    TicketCreateRequest,
 )
 from otobo.models.response_models import (
     TicketSearchResponse,
     TicketGetResponse,
     TicketResponse,
 )
-from otobo.models.ticket_models import TicketDetailOutput
 from otobo.util.otobo_errors import OTOBOError
 
 
-class OTOBOClient:
+class OTOBOZnunyClient:
     def __init__(self, config: OTOBOClientConfig, client: AsyncClient | None = None, max_retries: int = 2):
         self.config = config
-        self._client = client or AsyncClient()
+        self._client: AsyncClient = client or AsyncClient()
         self.base_url = config.base_url.rstrip("/")
         self.webservice_name = config.webservice_name
         self.auth = config.auth
@@ -90,7 +87,7 @@ class OTOBOClient:
             self._logger.error(f"[{request_id}] response validation error: {e}")
             return response_model.model_construct(**body)
 
-    async def create_ticket(self, ticket: Ticket) -> Ticket:
+    async def create_ticket(self, ticket: TicketCreate) -> Ticket:
         request: TicketCreateRequest = build_ticket_create_request(ticket)
         response: TicketResponse = await self._send(
             HTTPMethod.POST,
@@ -117,7 +114,7 @@ class OTOBOClient:
             tickets[0]
         )
 
-    async def update_ticket(self, ticket: Ticket) -> Ticket:
+    async def update_ticket(self, ticket: TicketUpdate) -> Ticket:
         request = build_ticket_update_request(ticket)
         response: TicketResponse = await self._send(
             HTTPMethod.PUT,
@@ -139,8 +136,7 @@ class OTOBOClient:
         )
         return response.TicketID or []
 
-    async def search_and_get(self, ticket_search: TicketSearch) -> list[
-        Ticket]:
+    async def search_and_get(self, ticket_search: TicketSearch) -> list[Ticket]:
         ids = await self.search_tickets(ticket_search)
         tasks = [self.get_ticket(i) for i in ids]
         return await asyncio.gather(*tasks)
@@ -148,8 +144,9 @@ class OTOBOClient:
     async def aclose(self) -> None:
         await self._client.aclose()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type: type[BaseException] | None, exc: BaseException | None,
+                        tb: TracebackType | None) -> None:
         await self.aclose()
