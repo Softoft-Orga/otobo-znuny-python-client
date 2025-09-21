@@ -88,6 +88,7 @@ def parse_ticket_detail_output(ticket_wire: TicketDetailOutput | dict) -> Ticket
         id=ticket_wire.TicketID,
         number=ticket_wire.TicketNumber,
         title=ticket_wire.Title,
+        lock=_to_idname(ticket_wire.LockID, ticket_wire.Lock),
         queue=_to_idname(ticket_wire.QueueID, ticket_wire.Queue),
         state=_to_idname(ticket_wire.StateID, ticket_wire.State),
         priority=_to_idname(ticket_wire.PriorityID, ticket_wire.Priority),
@@ -114,10 +115,13 @@ def build_ticket_base(ticket: TicketBase) -> OTOBOTicketBase | None:
     state_id, state_name = id_name(ticket.state)
     priority_id, priority_name = id_name(ticket.priority)
     type_id, type_name = id_name(ticket.type)
+    lock_id, lock_name = id_name(ticket.lock)
 
     otobo_ticket: OTOBOTicketBase = OTOBOTicketBase(
         Title=ticket.title,
         QueueID=queue_id,
+        LockID=lock_id,
+        Lock=lock_name,
         Queue=queue_name,
         StateID=state_id,
         State=state_name,

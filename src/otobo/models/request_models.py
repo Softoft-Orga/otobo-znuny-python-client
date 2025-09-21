@@ -14,6 +14,8 @@ class AuthData(BaseModel):
 class TicketSearchRequest(BaseModel):
     TicketNumber: Optional[Union[str, List[str]]] = None
     Title: Optional[Union[str, List[str]]] = None
+    Locks: Optional[List[str]] = None
+    LockIDs: Optional[List[int]] = None
     Queues: Optional[List[str]] = None
     QueueIDs: Optional[List[int]] = None
     UseSubQueues: Optional[bool] = False

@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 class OTOBOTicketBase(BaseModel):
     Title: Optional[str] = None
+    Lock: Optional[str] = None
+    LockID: Optional[int] = None
     QueueID: Optional[int] = None
     Queue: Optional[str] = None
     StateID: Optional[int] = None

@@ -24,6 +24,7 @@ class Article(BaseModel):
 class TicketBase(BaseModel, ABC):
     number: str | None = None
     title: str | None = None
+    lock: IdName | None = None
     queue: IdName | None = None
     state: IdName | None = None
     priority: IdName | None = None
@@ -67,6 +68,7 @@ class TicketSearch(BaseModel):
     titles: list[str] | None = None
     queues: list[IdName] | None = None
     states: list[IdName] | None = None
+    locks: list[IdName] | None = None
     priorities: list[IdName] | None = None
     types: list[IdName] | None = None
     customer_users: list[str] | None = None
