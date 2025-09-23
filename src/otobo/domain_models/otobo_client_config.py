@@ -7,10 +7,9 @@ from otobo.domain_models.ticket_operation import TicketOperation
 
 type OperationUrlMap = dict[TicketOperation, str]
 
-class OTOBOClientConfig(BaseModel):
+class ClientConfig(BaseModel):
     base_url: str
     webservice_name: str
-    auth: BasicAuth
     operation_url_map: OperationUrlMap
 
 

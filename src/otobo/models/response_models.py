@@ -1,17 +1,15 @@
-from typing import Union, List, Optional
-
 from pydantic import BaseModel
 
-from otobo.models.ticket_models import TicketDetailOutput
-from otobo.util.otobo_errors import OTOBOError
-
-class TicketResponse(BaseModel):
-    Ticket: Optional[TicketDetailOutput] = None
+from otobo.models.ticket_models import WsTicketOutput
 
 
-class TicketGetResponse(BaseModel):
-    Ticket: list[TicketDetailOutput]
+class WsTicketResponse(BaseModel):
+    Ticket: WsTicketOutput | None = None
 
 
-class TicketSearchResponse(BaseModel):
-    TicketID: List[int] | None = None
+class WsTicketGetResponse(BaseModel):
+    Ticket: list[WsTicketOutput]
+
+
+class WsTicketSearchResponse(BaseModel):
+    TicketID: list[int] | None = None

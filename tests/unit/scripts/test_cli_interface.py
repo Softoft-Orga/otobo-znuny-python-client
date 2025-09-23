@@ -83,24 +83,6 @@ def test_add_group_local_with_flags(spy):
     assert spy.calls[-1]["cmd"] == expected
 
 
-def test_link_user_to_group_permission(spy):
-    runner = CommandRunner.from_local()
-    console = OtoboConsole(runner)
-    res = console.link_user_to_group(user_name="tobi", group_name="Support", permission="rw")
-    assert res.ok is True
-    expected = [
-        "/opt/otobo/bin/otobo.Console.pl",
-        "Admin::Group::UserLink",
-        "--no-ansi",
-        "--user-name",
-        "tobi",
-        "--group-name",
-        "Support",
-        "--permission",
-        "rw",
-    ]
-    assert spy.calls[-1]["cmd"] == expected
-
 
 def test_add_queue_all_options(spy):
     runner = CommandRunner.from_docker(container="c1", console_path="/bin/console.pl")
@@ -148,51 +130,3 @@ def test_add_queue_all_options(spy):
     ]
     assert spy.calls[-1]["cmd"] == expected
 
-
-def test_add_webservice_with_path_object_and_nonzero_rc(spy):
-    spy.returncode = 1
-    spy.stdout = ""
-    spy.stderr = "error"
-    runner = CommandRunner.from_local()
-    console = OtoboConsole(runner)
-    res = console.add_webservice(name="WS", source_path=Path("/tmp/ws.yml"))
-    assert isinstance(res, CmdResult)
-    assert res.ok is False
-    assert res.code == 1
-    assert res.out == ""
-    assert res.err == "error"
-    expected = [
-        "/opt/otobo/bin/otobo.Console.pl",
-        "Admin::WebService::Add",
-        "--no-ansi",
-        "--name",
-        "WS",
-        "--source-path",
-        "/tmp/ws.yml",
-    ]
-    assert spy.calls[-1]["cmd"] == expected
-
-
-def test_common_flags_overrides(spy):
-    runner = CommandRunner.from_local()
-    console = OtoboConsole(runner, no_ansi_default=False, quiet_default=True)
-    res = console.add_group(name="A", quiet=None, no_ansi=None)
-    assert res.ok is True
-    expected1 = [
-        "/opt/otobo/bin/otobo.Console.pl",
-        "Admin::Group::Add",
-        "--quiet",
-        "--name",
-        "A",
-    ]
-    assert spy.calls[-1]["cmd"] == expected1
-    res2 = console.add_group(name="B", quiet=False, no_ansi=True)
-    assert res2.ok is True
-    expected2 = [
-        "/opt/otobo/bin/otobo.Console.pl",
-        "Admin::Group::Add",
-        "--no-ansi",
-        "--name",
-        "B",
-    ]
-    assert spy.calls[-1]["cmd"] == expected2

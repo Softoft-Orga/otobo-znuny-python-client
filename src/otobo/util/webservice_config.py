@@ -3,7 +3,7 @@ from typing import Dict, Any
 import yaml
 
 from otobo.domain_models.basic_auth_model import BasicAuth
-from otobo.domain_models.otobo_client_config import OTOBOClientConfig
+from otobo.domain_models.otobo_client_config import ClientConfig
 from otobo.domain_models.ticket_operation import TicketOperation
 
 TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
@@ -29,12 +29,12 @@ def create_otobo_client_config(
         base_url: str,
         auth: BasicAuth,
         service: str,
-) -> OTOBOClientConfig:
+) -> ClientConfig:
     data = _read_yaml(webservice_yaml_path)
     operations = _extract_operations_by_type(data)
     if not operations:
         raise ValueError("No supported ticket operations found in webservice YAML.")
-    return OTOBOClientConfig(
+    return ClientConfig(
         base_url=base_url,
         webservice_name=service,
         auth=auth,

@@ -121,7 +121,7 @@ def _write_text(path: Path, content: str, force: bool) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _get_running_container(name_patterns: list[str]) -> Optional[str]:
+def _get_running_container(name_patterns: list[str]) -> str | None:
     try:
         out = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=5)
         if out.returncode != 0:

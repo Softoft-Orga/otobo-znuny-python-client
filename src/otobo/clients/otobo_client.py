@@ -4,34 +4,35 @@ import logging
 import uuid
 from http import HTTPMethod
 from types import TracebackType
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from httpx import AsyncClient
 from pydantic import BaseModel, ValidationError
 
-from otobo.domain_models.otobo_client_config import OTOBOClientConfig
-from otobo.domain_models.ticket_models import TicketBase, TicketSearch, TicketUpdate, TicketCreate, Ticket
+from domain_models.basic_auth_model import BasicAuth
+from mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_auth, to_ws_ticket_get, to_ws_ticket_update, \
+    to_ws_ticket_search
+from otobo.domain_models.otobo_client_config import ClientConfig
+from otobo.domain_models.ticket_models import TicketSearch, TicketUpdate, TicketCreate, Ticket
 from otobo.domain_models.ticket_operation import TicketOperation
-from otobo.mappers import build_ticket_create_request, parse_ticket_detail_output, build_ticket_get_request, \
-    build_ticket_update_request, build_ticket_search_request
 from otobo.models.request_models import (
-    TicketCreateRequest,
+    WsTicketMutationRequest,
 )
 from otobo.models.response_models import (
-    TicketSearchResponse,
-    TicketGetResponse,
-    TicketResponse,
+    WsTicketSearchResponse,
+    WsTicketGetResponse,
+    WsTicketResponse,
 )
 from otobo.util.otobo_errors import OTOBOError
 
 
 class OTOBOZnunyClient:
-    def __init__(self, config: OTOBOClientConfig, client: AsyncClient | None = None, max_retries: int = 2):
+    def __init__(self, config: ClientConfig, client: AsyncClient | None = None, max_retries: int = 2):
         self.config = config
         self._client: AsyncClient = client or AsyncClient()
         self.base_url = config.base_url.rstrip("/")
         self.webservice_name = config.webservice_name
-        self.auth = config.auth
+        self._auth: BasicAuth | None = None
         self.operation_map = config.operation_url_map
         self.max_retries = max_retries
         self._logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class OTOBOZnunyClient:
     def _build_url(self, endpoint_name: str) -> str:
         return f"{self.base_url}/Webservice/{self.webservice_name}/{endpoint_name}"
 
-    def _extract_error(self, payload: Any) -> Optional[OTOBOError]:
+    def _extract_error(self, payload: Any) -> OTOBOError | None:
         if isinstance(payload, dict) and "Error" in payload:
             err = payload.get("Error") or {}
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
@@ -52,11 +53,13 @@ class OTOBOZnunyClient:
             response_model: type[T],
             data: dict[str, Any] | None = None,
     ) -> T:
+        if not self._auth:
+            raise RuntimeError("Client is not authenticated")
+        ws_auth = to_ws_auth(self._auth)
         endpoint_name = self.operation_map[operation]
         url = self._build_url(endpoint_name)
         request_id = uuid.uuid4().hex
-        payload = (self.auth.model_dump(by_alias=True, exclude_none=True) if isinstance(self.auth, BaseModel) else dict(
-            self.auth)) | (data or {})
+        payload = ws_auth.model_dump(by_alias=True, exclude_none=True, with_secrets=True) | (data or {})
 
         self._logger.debug(f"[{request_id}] {method.value} {url} payload_keys={list(payload.keys())}")
         resp = await self._client.request(
@@ -70,10 +73,9 @@ class OTOBOZnunyClient:
 
         try:
             body = resp.json()
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             self._logger.error(f"[{request_id}] invalid JSON response: {text[:500]}")
-            resp.raise_for_status()
-            raise
+            raise e
 
         api_err = self._extract_error(body)
         if api_err:
@@ -81,57 +83,59 @@ class OTOBOZnunyClient:
             raise api_err
 
         resp.raise_for_status()
-        try:
-            return response_model.model_validate(body, strict=False)
-        except ValidationError as e:
-            self._logger.error(f"[{request_id}] response validation error: {e}")
-            return response_model.model_construct(**body)
+        return response_model.model_validate(body, strict=False)
+
+    def login(self, auth: BasicAuth):
+        self._auth = auth
+
+    def logout(self):
+        self._auth = None
 
     async def create_ticket(self, ticket: TicketCreate) -> Ticket:
-        request: TicketCreateRequest = build_ticket_create_request(ticket)
-        response: TicketResponse = await self._send(
+        request: WsTicketMutationRequest = to_ws_ticket_create(ticket)
+        response: WsTicketResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.CREATE,
-            TicketResponse,
+            WsTicketResponse,
             data=request.model_dump(exclude_none=True, by_alias=True),
         )
         if response.Ticket is None:
             raise RuntimeError("create returned no Ticket")
-        return parse_ticket_detail_output(response.Ticket)
+        return from_ws_ticket_detail(response.Ticket)
 
     async def get_ticket(self, ticket_id: int | str) -> Ticket:
-        request = build_ticket_get_request(int(ticket_id))
-        response: TicketGetResponse = await self._send(
+        request = to_ws_ticket_get(int(ticket_id))
+        response: WsTicketGetResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.GET,
-            TicketGetResponse,
+            WsTicketGetResponse,
             data=request.model_dump(exclude_none=True, by_alias=True),
         )
         tickets = response.Ticket or []
         if len(tickets) != 1:
             raise RuntimeError(f"expected exactly one ticket, got {len(tickets)}")
-        return parse_ticket_detail_output(
+        return from_ws_ticket_detail(
             tickets[0]
         )
 
     async def update_ticket(self, ticket: TicketUpdate) -> Ticket:
-        request = build_ticket_update_request(ticket)
-        response: TicketResponse = await self._send(
+        request = to_ws_ticket_update(ticket)
+        response: WsTicketResponse = await self._send(
             HTTPMethod.PUT,
             TicketOperation.UPDATE,
-            TicketResponse,
+            WsTicketResponse,
             data=request.model_dump(exclude_none=True, by_alias=True),
         )
         if response.Ticket is None:
             raise RuntimeError("update returned no Ticket")
-        return parse_ticket_detail_output(response.Ticket)
+        return from_ws_ticket_detail(response.Ticket)
 
     async def search_tickets(self, ticket_search: TicketSearch) -> list[int]:
-        request = build_ticket_search_request(ticket_search)
-        response: TicketSearchResponse = await self._send(
+        request = to_ws_ticket_search(ticket_search)
+        response: WsTicketSearchResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.SEARCH,
-            TicketSearchResponse,
+            WsTicketSearchResponse,
             data=request.model_dump(exclude_none=True, by_alias=True),
         )
         return response.TicketID or []

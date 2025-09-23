@@ -1,12 +1,28 @@
 from abc import abstractmethod, ABC
 from datetime import datetime
+from typing import Self, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 
 class IdName(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
     id: int | None = None
     name: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def _normalize_name(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        s = v.strip()
+        return s or None
+
+    @model_validator(mode="after")
+    def _require_one(self) -> Self:
+        if self.id is None and self.name is None:
+            raise ValueError("either id or name must be set")
+        return self
 
 
 class Article(BaseModel):
@@ -34,6 +50,7 @@ class TicketBase(BaseModel, ABC):
     customer_user: str | None = None
     created_at: datetime | None = None
     changed_at: datetime | None = None
+    dynamic_fields: dict[str, str] = {}
 
     @abstractmethod
     def get_articles(self) -> list[Article]:
@@ -63,6 +80,14 @@ class Ticket(TicketBase):
         return self.articles or []
 
 
+class DynamicFieldFilter(BaseModel):
+    field_name: str
+    equals: Any | list[Any] | None = None
+    like: str | None = None
+    greater: Any | None = None
+    smaller: Any | None = None
+
+
 class TicketSearch(BaseModel):
     numbers: list[str] | None = None
     titles: list[str] | None = None
@@ -74,3 +99,4 @@ class TicketSearch(BaseModel):
     customer_users: list[str] | None = None
     use_subqueues: bool = False
     limit: int = 50
+    dynamic_fields: list[DynamicFieldFilter] | None = None

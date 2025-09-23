@@ -2,16 +2,19 @@ import time
 
 import pytest
 
-from otobo.domain_models.ticket_models import TicketCreate, IdName, Article
 from otobo.clients.otobo_client import OTOBOZnunyClient
+from otobo.domain_models.basic_auth_model import BasicAuth
+from otobo.domain_models.ticket_models import TicketCreate, IdName, Article
 from otobo.util.otobo_errors import OTOBOError
 
 
 @pytest.mark.asyncio
-async def test_ticket_create_with_restricted_user_should_fail(security_user_client: OTOBOZnunyClient) -> None:
+async def test_ticket_create_with_restricted_user_should_fail(otobo_client:OTOBOZnunyClient,
+                                                              security_user_auth: BasicAuth) -> None:
     title = f"plain-{int(time.time())}"
     try:
-        await security_user_client.create_ticket(
+        otobo_client.login(security_user_auth)
+        await otobo_client.create_ticket(
             TicketCreate(
                 title=title,
                 queue=IdName(name="Raw"),

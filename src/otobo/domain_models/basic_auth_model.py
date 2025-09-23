@@ -1,6 +1,8 @@
-from pydantic import BaseModel
+from pydantic import SecretStr
+
+from util.safe_base_model import SafeBaseModel
 
 
-class BasicAuth(BaseModel):
-    UserLogin: str
-    Password: str
+class BasicAuth(SafeBaseModel):
+    user_login: str
+    password: SecretStr
