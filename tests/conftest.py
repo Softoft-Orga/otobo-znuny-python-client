@@ -2,7 +2,7 @@
 import asyncio
 import os
 import re
-from typing import Generator
+from collections.abc import Generator
 
 # tests/conftest.py (Ergänzung)
 import mariadb
