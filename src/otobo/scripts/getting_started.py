@@ -8,7 +8,7 @@ from typing import Optional
 
 import typer
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from domain_models.otobo_client_config import OperationUrlMap
 from domain_models.ticket_operation import TicketOperation
@@ -171,6 +171,8 @@ def _detect_environment() -> SystemEnvironment | None:
 
 
 class GettingStartedConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     base_url: str | None = None
     env_kind: SystemEnvironment | None = None
     webservice_name: str | None = None
