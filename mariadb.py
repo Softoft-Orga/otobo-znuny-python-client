@@ -1,3 +1,15 @@
+from __future__ import annotations
+
+
+class _Cursor:
+    def execute(self, query: str) -> None:  # noqa: D401
+        """Stub execute method that does nothing."""
+
+
+class _Connection:
+    def cursor(self) -> _Cursor:
+        return _Cursor()
+=======
 class _DummyCursor:
     def execute(self, query: str) -> None:
         self.last_query = query
@@ -15,5 +27,5 @@ class _DummyConnection:
         pass
 
 
-def connect(*args, **kwargs) -> _DummyConnection:
-    return _DummyConnection(*args, **kwargs)
+def connect(**kwargs) -> _Connection:  # noqa: ANN003
+    return _Connection()
