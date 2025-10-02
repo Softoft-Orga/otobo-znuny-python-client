@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
 
-type BooleanInteger = Literal[0, 1]
+BooleanInteger: TypeAlias = Literal[0, 1]
