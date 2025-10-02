@@ -73,31 +73,31 @@ def clear_otobo_tables() -> None:
         table="ticket",
     )
 
-@pytest_asyncio.fixture(scope="function")
-async def open_ticket_ai_auth() -> BasicAuth:
+@pytest.fixture(scope="function")
+def open_ticket_ai_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
     user = os.environ["OTOBO_DEMO_USER"]
     password = os.environ["OTOBO_DEMO_PASSWORD"]
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest_asyncio.fixture(scope="function")
-async def security_user_auth() -> BasicAuth:
+@pytest.fixture(scope="function")
+def security_user_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
     user = "security_test"
     password = "qiTSn3KmTFZWgoAyUKa84UkB"
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest_asyncio.fixture(scope="function")
-async def otobo_client(open_ticket_ai_client_config: ClientConfig, open_ticket_ai_auth: BasicAuth) -> OTOBOZnunyClient:
+@pytest.fixture(scope="function")
+def otobo_client(open_ticket_ai_client_config: ClientConfig, open_ticket_ai_auth: BasicAuth) -> OTOBOZnunyClient:
     client = OTOBOZnunyClient(config=open_ticket_ai_client_config)
     client.login(open_ticket_ai_auth)
     return client
 
 
-@pytest_asyncio.fixture(scope="function")
-async def open_ticket_ai_client_config() -> ClientConfig:
+@pytest.fixture(scope="function")
+def open_ticket_ai_client_config() -> ClientConfig:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
     base_url = os.environ["OTOBO_BASE_URL"]
