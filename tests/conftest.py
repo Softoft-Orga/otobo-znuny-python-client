@@ -7,7 +7,6 @@ from collections.abc import Generator
 # tests/conftest.py (Ergänzung)
 import mariadb
 import pytest
-import pytest_asyncio
 from dotenv import load_dotenv
 from pydantic import SecretStr
 

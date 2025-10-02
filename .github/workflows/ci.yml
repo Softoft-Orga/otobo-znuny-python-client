@@ -8,8 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10","3.11","3.12","3.13"]
-        mode: ["latest","min"]
+        include:
+          - python-version: "3.10"
+            py: "310"
+          - python-version: "3.11"
+            py: "311"
+          - python-version: "3.12"
+            py: "312"
+          - python-version: "3.13"
+            py: "313"
+        mode: [ "latest","min" ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,4 +25,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install tox --with tox-uv --with tox-min-req
-      - run: tox -e py${{ replace(matrix.python-version, '.', '') }}-${{ matrix.mode }}
+      - run: tox -e py${{ matrix.py }}-${{ matrix.mode }}

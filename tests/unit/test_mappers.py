@@ -1,7 +1,6 @@
 # tests/test_mappers.py
 import random
 
-import pytest
 from datetime import datetime
 
 from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_ticket_update, to_ws_ticket_search, \

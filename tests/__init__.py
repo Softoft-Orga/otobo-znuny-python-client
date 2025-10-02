@@ -30,19 +30,7 @@ if "mariadb" not in sys.modules:
     sys.modules["mariadb"] = mariadb_stub
 
 
-if "tests.conftest" not in sys.modules:
-    conftest_stub = ModuleType("tests.conftest")
-
-    def _event_loop():
-        loop = asyncio.new_event_loop()
-        try:
-            yield loop
-        finally:
-            loop.close()
-
-    conftest_stub.event_loop = pytest.fixture(scope="session")(_event_loop)
-    conftest_stub.__file__ = str(Path(__file__).with_name("conftest.py"))
-    sys.modules["tests.conftest"] = conftest_stub
+# Removed conftest stub - actual conftest.py is now properly configured
 
 import typing
 
