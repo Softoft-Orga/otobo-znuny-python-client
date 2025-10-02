@@ -193,25 +193,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mariadb"
-version = "1.1.13"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/a0/0498c90f46940b6fd7f5c76d22df9f011849964e94e0b22fde26c42191c7/mariadb-1.1.13.tar.gz", hash = "sha256:3a0fd24fae2b9990dc13a0a427a43d4a5434cc2a8c3b260a27f40b7824719037", size = 111126 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/e2/5e4068b225ccbd6fb7ea2b8f5ba52060e48bf2e63448206670cdfe73a1c5/mariadb-1.1.13-cp310-cp310-win32.whl", hash = "sha256:f49467e7076819ccf21a7e5ef030761af2160b23ce4484d88d260459809d90ff", size = 185138 },
-    { url = "https://files.pythonhosted.org/packages/33/8d/65b28ce61c422aba68c052a3cdb23772003267f47438a27a6e2cbf58c1c9/mariadb-1.1.13-cp310-cp310-win_amd64.whl", hash = "sha256:1c9aa9a31f943737c3a58bb4dc9deb9cf2b50b3ec807f90c5c99c7b35f8442bd", size = 202048 },
-    { url = "https://files.pythonhosted.org/packages/09/71/c23f6ffb06ba2c0ad2e90f4236b1541f9005e24eaeb166800b19c4f584f6/mariadb-1.1.13-cp311-cp311-win32.whl", hash = "sha256:c15ab872f1e951dd1bd4006d2ee2b942156f66c1cd724a1b2992dc02c47dff6a", size = 185136 },
-    { url = "https://files.pythonhosted.org/packages/c8/08/10308cb9bbccf83ff72caa1146014445a79dfeffb4eba9a85f73575c5959/mariadb-1.1.13-cp311-cp311-win_amd64.whl", hash = "sha256:d6fa7f2cdfae762d2d69b71e51f61415d0251118a622a6d06c7f05261579100a", size = 202046 },
-    { url = "https://files.pythonhosted.org/packages/ad/b4/d961a5dfa8a7a04ede70f76f85b951b8d0ec28d79b86ced829a67af78bdd/mariadb-1.1.13-cp312-cp312-win32.whl", hash = "sha256:358ecdc8775f4a97357fc233bb84a1c8d8d52866ee5fe98f2d13e9e58a04b6fb", size = 185334 },
-    { url = "https://files.pythonhosted.org/packages/0a/3b/16cc69a9c90f91b74c096c0cb9634e14692486beb28b82ec5efd97866de7/mariadb-1.1.13-cp312-cp312-win_amd64.whl", hash = "sha256:0604c57e6f90ff7ef190a56894d2b32ca5f0182924b5159be9319ba243ffbf98", size = 202109 },
-    { url = "https://files.pythonhosted.org/packages/02/16/583719e127774294d4af085a063b38f20407801cd9194a676334fb121edd/mariadb-1.1.13-cp313-cp313-win32.whl", hash = "sha256:36c644c13ecf3e38cb89f37f9bd054703760b94c881476492fe789801a063ce3", size = 185301 },
-    { url = "https://files.pythonhosted.org/packages/1b/da/4170f5532813ffba2641f821ed23ed1f22fa3ff8d603e47c91b0776ff9b7/mariadb-1.1.13-cp313-cp313-win_amd64.whl", hash = "sha256:6ec51ad2e33312c397cfcc5e2bca59861f572d5e8880e025d43db9a5d472a3a9", size = 202105 },
-]
-
-[[package]]
 name = "markdown-it-py"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -303,38 +284,38 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "mariadb" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "mariadb" },
     { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "mariadb", marker = "extra == 'dev'", specifier = ">=1.1.13" },
-    { name = "pydantic", specifier = ">=2.11.9" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "python-dotenv", specifier = ">=1.1.1" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "requests", specifier = ">=2.32.5" },
-    { name = "typer", specifier = ">=0.19.1" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
-    { name = "types-requests", specifier = ">=2.32.4.20250913" },
+    { name = "httpx", specifier = ">=0.26" },
+    { name = "pydantic", specifier = ">=2" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.20" },
+    { name = "python-dotenv", specifier = ">=1" },
+    { name = "pyyaml", specifier = ">=5" },
+    { name = "requests", specifier = ">=2" },
+    { name = "typer", specifier = ">=0.14" },
+    { name = "types-pyyaml", specifier = ">=5" },
+    { name = "types-requests", specifier = ">=2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mariadb", specifier = ">=1.1.13" },
-    { name = "mypy", specifier = ">=1.18.2" },
-    { name = "ruff", specifier = ">=0.13.1" },
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pytest", specifier = ">=7" },
+    { name = "pytest-asyncio", specifier = ">=0.20" },
+    { name = "ruff", specifier = ">=0.10" },
 ]
 
 [[package]]

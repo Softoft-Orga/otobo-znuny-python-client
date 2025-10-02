@@ -23,20 +23,20 @@ classifiers = [
     "Framework :: AsyncIO"
 ]
 dependencies = [
-    "httpx>=0.28.1",
-    "pydantic>=2.11.9",
-    "python-dotenv>=1.1.1",
-    "pyyaml>=6.0.2",
-    "requests>=2.32.5",
-    "typer>=0.19.1",
-    "types-pyyaml>=6.0.12.20250915",
-    "types-requests>=2.32.4.20250913",
+    "httpx>=0.26",
+    "pydantic>=2",
+    "python-dotenv>=1",
+    "pyyaml>=5",
+    "requests>=2",
+    "typer>=0.14",
+    "types-pyyaml>=5",
+    "types-requests>=2",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.3.5",
-    "pytest-asyncio>=0.24.0",
+    "pytest>=7",
+    "pytest-asyncio>=0.20",
 ]
 
 [project.urls]
@@ -52,8 +52,10 @@ asyncio_default_fixture_loop_scope = "function"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.18.2",
-    "ruff>=0.13.1",
+    "pytest>=7",
+    "pytest-asyncio>=0.20",
+    "mypy>=1.10",
+    "ruff>=0.10",
 ]
 
 [tool.mypy]
