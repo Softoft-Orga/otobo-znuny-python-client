@@ -7,6 +7,7 @@ and ease of use.
 
 - [Getting started (English)](docs/getting-started.en.md)
 - [Einstieg (Deutsch)](docs/getting-started.de.md)
+- [Library overview](docs/library-overview.md)
 
 ## Features
 
