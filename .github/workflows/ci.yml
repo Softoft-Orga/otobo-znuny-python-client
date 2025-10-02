@@ -1,7 +1,5 @@
 name: ci
-on:
-  push:
-  pull_request:
+on: [ push, pull_request ]
 
 jobs:
   test:
@@ -10,21 +8,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python-version: "3.10"
-            py: "310"
-          - python-version: "3.11"
-            py: "311"
-          - python-version: "3.12"
-            py: "312"
-          - python-version: "3.13"
-            py: "313"
-        mode: ["latest","min"]
+        python-version: [ "3.10","3.11","3.12","3.13" ]
+        mode: [ "latest","min" ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v6
+
+      # macht aus 3.12 -> 312 für tox
+      - name: Compute tox env suffix
+        run: echo "PY_NODOT=$(echo '${{ matrix.python-version }}' | tr -d '.')" >> $GITHUB_ENV
+
       - run: uv tool install tox --with tox-uv --with tox-min-req
-      - run: tox -vv -e py${{ matrix.py }}-${{ matrix.mode }}
+      - run: tox -vv -e py${{ env.PY_NODOT }}-${{ matrix.mode }}
