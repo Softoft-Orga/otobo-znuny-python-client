@@ -4,7 +4,7 @@ import logging
 import uuid
 from http import HTTPMethod
 from types import TracebackType
-from typing import Any, Self
+from typing import Any, Self, TypeVar
 
 from httpx import AsyncClient
 from pydantic import BaseModel
@@ -47,7 +47,9 @@ class OTOBOZnunyClient:
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
         return None
 
-    async def _send[T: BaseModel](
+    T = TypeVar('T', bound=BaseModel)
+
+    async def _send(
             self,
             method: HTTPMethod,
             operation: TicketOperation,
