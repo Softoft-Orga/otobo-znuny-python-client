@@ -17,4 +17,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install tox --with tox-uv --with tox-min-req
-      - run: tox -e py${{ matrix.python-version//. }}-${{ matrix.mode }}
+      - run: tox -e py${{ replace(matrix.python-version, '.', '') }}-${{ matrix.mode }}
