@@ -10,7 +10,7 @@ import yaml
 from pydantic import BaseModel
 
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
-from scripts.webservice_util import generate_enabled_operations_list
+from otobo_znuny.scripts.webservice_util import generate_enabled_operations_list
 
 
 class NoAliasDumper(yaml.SafeDumper):

@@ -6,10 +6,10 @@ import string
 import typer
 from pydantic import BaseModel, ConfigDict
 
-from domain_models.otobo_client_config import OperationUrlMap
-from domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.otobo_client_config import OperationUrlMap
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 from otobo_znuny.scripts.cli_interface import OtoboConsole, CommandRunner
-from scripts.setup_webservices import WebServiceGenerator
+from otobo_znuny.scripts.setup_webservices import WebServiceGenerator
 
 app = typer.Typer()
 
