@@ -6,6 +6,7 @@ from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
 from otobo_znuny.domain_models.ticket_models import IdName, Article, TicketSearch, TicketCreate
 
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
 async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyClient) -> None:
     prefix = f"search-{int(time.time())}"
@@ -54,6 +55,7 @@ async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyCl
     found_ids = set(await otobo_client.search_tickets(search))
     assert created_ids.issubset(found_ids)
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
 async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClient) -> None:
     prefix = f"searchget-{int(time.time())}"
@@ -95,6 +97,7 @@ async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClien
         assert t.articles
         assert isinstance(t.get_articles()[0].body, str)
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
 async def test_search_no_results(otobo_client: OTOBOZnunyClient) -> None:
     search = TicketSearch(titles=[f"no-such-title-{int(time.time())}"])

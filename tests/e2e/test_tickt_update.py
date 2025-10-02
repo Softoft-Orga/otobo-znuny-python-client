@@ -6,7 +6,9 @@ from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
 from otobo_znuny.domain_models.ticket_models import IdName, Article, TicketUpdate, TicketCreate
 
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_update_title_and_priority(otobo_client: OTOBOZnunyClient) -> None:
     title = f"upd-{int(time.time())}"
     created = await otobo_client.create_ticket(
@@ -34,7 +36,9 @@ async def test_update_title_and_priority(otobo_client: OTOBOZnunyClient) -> None
     assert got.title == title + "-updated"
     assert got.priority and (got.priority.name == "4 high" or got.priority.id == 4)
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_update_with_numeric_ids(otobo_client: OTOBOZnunyClient) -> None:
     title = f"updnum-{int(time.time())}"
     created = await otobo_client.create_ticket(
@@ -60,7 +64,9 @@ async def test_update_with_numeric_ids(otobo_client: OTOBOZnunyClient) -> None:
     got = await otobo_client.get_ticket(ticket_id=tid)
     assert got.priority and (got.priority.id == 5 or got.priority.name in {"5 very high", "5"})
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_update_add_article(otobo_client: OTOBOZnunyClient) -> None:
     title = f"updart-{int(time.time())}"
     created = await otobo_client.create_ticket(

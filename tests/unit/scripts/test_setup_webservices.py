@@ -23,7 +23,6 @@ sys.modules["scripts.webservice_util"] = webservice_util
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
 from otobo_znuny.scripts import setup_webservices as sw
 
-
 runner = CliRunner()
 
 
@@ -41,35 +40,41 @@ def provider_name_property(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+@pytest.mark.unit
 def test_validate_name_accepts_valid_name() -> None:
     generator = sw.WebServiceGenerator()
     assert generator._validate_name("Valid_Name-123") == "Valid_Name-123"
 
 
+@pytest.mark.unit
 def test_validate_name_rejects_empty() -> None:
     generator = sw.WebServiceGenerator()
     with pytest.raises(ValueError, match="cannot be empty"):
         generator._validate_name("")
 
 
+@pytest.mark.unit
 def test_validate_name_rejects_invalid_characters() -> None:
     generator = sw.WebServiceGenerator()
     with pytest.raises(ValueError, match="Name must start"):
         generator._validate_name("1-invalid")
 
 
+@pytest.mark.unit
 def test_description_for_restricted_user() -> None:
     generator = sw.WebServiceGenerator()
     description = generator._description("Service", "agent")
     assert description == "Webservice for 'Service'. Restricted to user 'agent'."
 
 
+@pytest.mark.unit
 def test_description_for_all_agents() -> None:
     generator = sw.WebServiceGenerator()
     description = generator._description("Service", None)
     assert description == "Webservice for 'Service'. Accessible by all permitted agents."
 
 
+@pytest.mark.unit
 def test_create_inbound_mapping_for_restricted_user() -> None:
     generator = sw.WebServiceGenerator()
     mapping = generator._create_inbound_mapping("restricted")
@@ -85,12 +90,14 @@ def test_create_inbound_mapping_for_restricted_user() -> None:
     assert mapping == expected
 
 
+@pytest.mark.unit
 def test_create_inbound_mapping_when_unrestricted() -> None:
     generator = sw.WebServiceGenerator()
     mapping = generator._create_inbound_mapping(None)
     assert mapping == generator._create_simple_empty_mapping()
 
 
+@pytest.mark.unit
 def test_generate_yaml_builds_expected_structure(provider_name_property: None) -> None:
     generator = sw.WebServiceGenerator()
     yaml_text = generator.generate_yaml(
@@ -133,12 +140,14 @@ def test_generate_yaml_builds_expected_structure(provider_name_property: None) -
     assert search_op["MappingOutbound"] == outbound_expected
 
 
+@pytest.mark.unit
 def test_generate_yaml_requires_operations() -> None:
     generator = sw.WebServiceGenerator()
     with pytest.raises(ValueError, match="No operations enabled"):
         generator.generate_yaml("Service", [], None)
 
 
+@pytest.mark.unit
 def test_write_yaml_to_file_uses_result(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     captured: dict[str, object] = {}
 
@@ -172,6 +181,7 @@ def test_write_yaml_to_file_uses_result(monkeypatch: pytest.MonkeyPatch, tmp_pat
     }
 
 
+@pytest.mark.unit
 def test_cli_requires_authentication_choice() -> None:
     result = runner.invoke(
         sw.app,
@@ -181,6 +191,7 @@ def test_cli_requires_authentication_choice() -> None:
     assert "must specify an authentication mode" in result.output
 
 
+@pytest.mark.unit
 def test_cli_rejects_conflicting_authentication_options() -> None:
     result = runner.invoke(
         sw.app,
@@ -198,6 +209,7 @@ def test_cli_rejects_conflicting_authentication_options() -> None:
     assert "mutually exclusive" in result.output
 
 
+@pytest.mark.unit
 def test_cli_outputs_generated_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
@@ -227,6 +239,7 @@ def test_cli_outputs_generated_yaml(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured["kwargs"]["restricted_user"] is None
 
 
+@pytest.mark.unit
 def test_cli_writes_generated_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     captured: dict[str, object] = {}
 

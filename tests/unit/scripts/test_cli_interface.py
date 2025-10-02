@@ -24,8 +24,8 @@ def spy(monkeypatch):
     monkeypatch.setattr(subprocess, "run", s)
     return s
 
-
-def test_add_user_with_groups_docker(spy):
+@pytest.mark.unit
+def test_add_user_with_groups_docker(spy) -> None:
     runner = CommandRunner.from_docker(container="otobo-web-1", console_path="./bin/otobo.Console.pl")
     console = OtoboConsole(runner)
     res = console.add_user(
@@ -64,8 +64,8 @@ def test_add_user_with_groups_docker(spy):
     ]
     assert spy.calls[-1]["cmd"] == expected
 
-
-def test_add_group_local_with_flags(spy):
+@pytest.mark.unit
+def test_add_group_local_with_flags(spy) -> None:
     runner = CommandRunner.from_local(console_path="/opt/otobo/bin/otobo.Console.pl")
     console = OtoboConsole(runner)
     res = console.add_group(name="Support", comment="All agents", quiet=True, no_ansi=False)
@@ -82,8 +82,8 @@ def test_add_group_local_with_flags(spy):
     assert spy.calls[-1]["cmd"] == expected
 
 
-
-def test_add_queue_all_options(spy):
+@pytest.mark.unit
+def test_add_queue_all_options(spy) -> None:
     runner = CommandRunner.from_docker(container="c1", console_path="/bin/console.pl")
     console = OtoboConsole(runner)
     res = console.add_queue(
@@ -128,4 +128,3 @@ def test_add_queue_all_options(spy):
         "1",
     ]
     assert spy.calls[-1]["cmd"] == expected
-

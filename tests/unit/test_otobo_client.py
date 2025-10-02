@@ -51,6 +51,7 @@ def make_client(async_client: AsyncMock | None = None) -> OTOBOZnunyClient:
     return client
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_send_combines_auth_with_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     http_client = AsyncMock()
@@ -79,6 +80,7 @@ async def test_send_combines_auth_with_payload(monkeypatch: pytest.MonkeyPatch) 
     assert result.Ticket.Title == "Example"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_send_raises_otobo_error_when_error_in_payload() -> None:
     http_client = AsyncMock()
@@ -99,6 +101,7 @@ async def test_send_raises_otobo_error_when_error_in_payload() -> None:
 
 
 @pytest.mark.skip(reason="Fallback behavior no longer exists in implementation")
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_send_falls_back_to_model_construct_on_validation_error() -> None:
     http_client = AsyncMock()
@@ -119,6 +122,7 @@ async def test_send_falls_back_to_model_construct_on_validation_error() -> None:
     assert result.value == "not-an-int"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -170,6 +174,7 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
     assert captured["parsed_arg"] is response_ticket
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_create_ticket_raises_when_missing_ticket(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -189,6 +194,7 @@ async def test_create_ticket_raises_when_missing_ticket(monkeypatch: pytest.Monk
         await client.create_ticket(TicketCreate())
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -228,6 +234,7 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
     assert "arg" in captured
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_ticket_raises_when_not_single_ticket(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -247,6 +254,7 @@ async def test_get_ticket_raises_when_not_single_ticket(monkeypatch: pytest.Monk
         await client.get_ticket(7)
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_search_tickets_returns_ids(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -271,6 +279,7 @@ async def test_search_tickets_returns_ids(monkeypatch: pytest.MonkeyPatch) -> No
     assert result == [1, 2, 3]
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_search_tickets_handles_missing_ids(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())
@@ -290,6 +299,7 @@ async def test_search_tickets_handles_missing_ids(monkeypatch: pytest.MonkeyPatc
     assert result == []
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_search_and_get_calls_get_for_each_ticket(monkeypatch: pytest.MonkeyPatch) -> None:
     client = make_client(async_client=AsyncMock())

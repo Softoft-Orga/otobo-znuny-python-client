@@ -8,7 +8,9 @@ from otobo_znuny.domain_models.ticket_models import IdName, Article, TicketCreat
 from otobo_znuny.domain_models.ticket_models import TicketUpdate
 
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_create_and_get_ticket_domain(otobo_client: OTOBOZnunyClient) -> None:
     title = f"plain-{int(time.time())}"
     created = await otobo_client.create_ticket(
@@ -32,7 +34,9 @@ async def test_create_and_get_ticket_domain(otobo_client: OTOBOZnunyClient) -> N
     assert got.articles and "Hello world" in (got.articles[0].body or "")
 
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_update_title_and_priority_domain(otobo_client: OTOBOZnunyClient) -> None:
     title = f"upd-{int(time.time())}"
     created = await otobo_client.create_ticket(
@@ -61,7 +65,9 @@ async def test_update_title_and_priority_domain(otobo_client: OTOBOZnunyClient) 
     assert got.priority and (got.priority.name == "4 high" or got.priority.id == 4)
 
 
+@pytest.mark.e2e
 @pytest.mark.asyncio
+@pytest.mark.e2e
 async def test_update_add_article_domain(otobo_client: OTOBOZnunyClient) -> None:
     title = f"updart-{int(time.time())}"
     created = await otobo_client.create_ticket(

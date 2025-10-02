@@ -1,4 +1,5 @@
 # tests/test_mappers.py
+import pytest
 import random
 
 from datetime import datetime
@@ -10,7 +11,8 @@ from otobo_znuny.models.ticket_models import WsTicketBase, WsArticleDetail, WsDy
 from otobo_znuny.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketGetRequest, WsTicketSearchRequest
 
 
-def test_build_ticket_create_request_roundtrip():
+@pytest.mark.unit
+def test_build_ticket_create_request_roundtrip() -> None:
     t = TicketCreate(
         title="Demo",
         queue=IdName(id=2, name="Raw"),
@@ -30,6 +32,7 @@ def test_build_ticket_create_request_roundtrip():
     assert req_ticket.State == "new"
     assert req_ticket.Priority == "3 normal"
     assert req_ticket.Type == "Unclassified"
+    assert req_ticket.CustomerUser == "user1"
     articles = req.Article if isinstance(req.Article, list) else [req.Article] if req.Article else []
     print(articles)
     assert articles[0].Subject == "S"
@@ -62,7 +65,8 @@ def test_build_ticket_create_request_roundtrip():
     assert back.id == 111
 
 
-def test_build_ticket_update_request_includes_ids_and_names():
+@pytest.mark.unit
+def test_build_ticket_update_request_includes_ids_and_names() -> None:
     random_ticket_id = random.randint(1, 10**12)
     t = TicketUpdate(
         id=random_ticket_id,
@@ -84,6 +88,7 @@ def test_build_ticket_update_request_includes_ids_and_names():
     assert req_ticket.StateID == 1
 
 
+@pytest.mark.unit
 def test_build_ticket_search_request_idname_lists() -> None:
     s = TicketSearch(
         numbers=["1001", "1002"],
@@ -108,12 +113,14 @@ def test_build_ticket_search_request_idname_lists() -> None:
     assert req.UseSubQueues == 1
 
 
+@pytest.mark.unit
 def test_build_ticket_get_request_by_id_and_number() -> None:
     r1 = to_ws_ticket_get(ticket_id=7)
     assert isinstance(r1, WsTicketGetRequest)
     assert r1.TicketID == 7
 
 
+@pytest.mark.unit
 def test_parse_ticket_detail_output_handles_single_and_list_article() -> None:
     art = WsArticleDetail(Subject="S1", Body="B1", ContentType="text/plain")
     wire_single = WsTicketOutput(
