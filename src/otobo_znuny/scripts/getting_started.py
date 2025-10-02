@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import json
-import os
 import secrets
 import string
-from typing import Optional
 
 import typer
-import yaml
 from pydantic import BaseModel, ConfigDict
 
 from domain_models.otobo_client_config import OperationUrlMap
 from domain_models.ticket_operation import TicketOperation
-from otobo.scripts.cli_interface import OtoboConsole, CommandRunner
+from otobo_znuny.scripts.cli_interface import OtoboConsole, CommandRunner
 from scripts.setup_webservices import WebServiceGenerator
 
 app = typer.Typer()

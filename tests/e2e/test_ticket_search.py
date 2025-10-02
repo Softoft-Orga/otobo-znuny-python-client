@@ -2,8 +2,8 @@
 import time
 import pytest
 
-from otobo.clients.otobo_client import OTOBOZnunyClient
-from otobo.domain_models.ticket_models import TicketBase, IdName, Article, TicketSearch, TicketCreate
+from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny.domain_models.ticket_models import IdName, Article, TicketSearch, TicketCreate
 
 
 @pytest.mark.asyncio

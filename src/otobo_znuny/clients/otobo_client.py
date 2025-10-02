@@ -7,23 +7,24 @@ from types import TracebackType
 from typing import Any, Self
 
 from httpx import AsyncClient
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from domain_models.basic_auth_model import BasicAuth
-from mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_auth, to_ws_ticket_get, to_ws_ticket_update, \
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_auth, to_ws_ticket_get, \
+    to_ws_ticket_update, \
     to_ws_ticket_search
-from otobo.domain_models.otobo_client_config import ClientConfig
-from otobo.domain_models.ticket_models import TicketSearch, TicketUpdate, TicketCreate, Ticket
-from otobo.domain_models.ticket_operation import TicketOperation
-from otobo.models.request_models import (
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny.domain_models.ticket_models import TicketSearch, TicketUpdate, TicketCreate, Ticket
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.models.request_models import (
     WsTicketMutationRequest,
 )
-from otobo.models.response_models import (
+from otobo_znuny.models.response_models import (
     WsTicketSearchResponse,
     WsTicketGetResponse,
     WsTicketResponse,
 )
-from otobo.util.otobo_errors import OTOBOError
+from otobo_znuny.util.otobo_errors import OTOBOError
 
 
 class OTOBOZnunyClient:

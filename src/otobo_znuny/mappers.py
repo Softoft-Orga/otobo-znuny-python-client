@@ -4,13 +4,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from domain_models.basic_auth_model import BasicAuth
-from models.base_models import BooleanInteger
-from otobo.domain_models.ticket_models import Article, IdName, TicketBase, TicketSearch, DynamicFieldFilter
-from otobo.domain_models.ticket_models import TicketUpdate, Ticket, TicketCreate
-from otobo.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketSearchRequest, \
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.models.base_models import BooleanInteger
+from otobo_znuny.domain_models.ticket_models import Article, IdName, TicketBase, TicketSearch, DynamicFieldFilter
+from otobo_znuny.domain_models.ticket_models import TicketUpdate, Ticket, TicketCreate
+from otobo_znuny.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketSearchRequest, \
     WsTicketGetRequest, WsDynamicFieldFilter, WsAuthData
-from otobo.models.ticket_models import WsDynamicField, WsArticleDetail, WsTicketOutput, WsTicketBase
+from otobo_znuny.models.ticket_models import WsDynamicField, WsArticleDetail, WsTicketOutput, WsTicketBase
 
 logger = logging.getLogger(__name__)
 

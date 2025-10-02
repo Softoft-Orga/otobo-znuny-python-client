@@ -11,7 +11,7 @@ pip install otobo
 ## Configuration
 
 ```python
-from otobo import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon, ArticleDetail,
+from otobo_znuny import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon, ArticleDetail,
 
 TicketOperation
 

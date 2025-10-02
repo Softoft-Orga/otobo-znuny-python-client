@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "otobo_znuny"
-version = "1.0.0"
+version = "1.2.5"
 description = "Python client library for the OTOBO / Znuny REST API"
 readme = "README.md"
 license = { text = "MIT" }

@@ -9,7 +9,7 @@ import typer
 import yaml
 from pydantic import BaseModel
 
-from otobo.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 from scripts.webservice_util import generate_enabled_operations_list
 
 

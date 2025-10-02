@@ -20,8 +20,8 @@ webservice_util = importlib.import_module("otobo.scripts.webservice_util")
 setattr(scripts_pkg, "webservice_util", webservice_util)
 sys.modules["scripts.webservice_util"] = webservice_util
 
-from otobo.domain_models.ticket_operation import TicketOperation
-from otobo.scripts import setup_webservices as sw
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.scripts import setup_webservices as sw
 
 
 runner = CliRunner()

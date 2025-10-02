@@ -2,10 +2,10 @@ import time
 
 import pytest
 
-from otobo.clients.otobo_client import OTOBOZnunyClient
-from otobo.domain_models.basic_auth_model import BasicAuth
-from otobo.domain_models.ticket_models import TicketCreate, IdName, Article
-from otobo.util.otobo_errors import OTOBOError
+from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.domain_models.ticket_models import TicketCreate, IdName, Article
+from otobo_znuny.util.otobo_errors import OTOBOError
 
 
 @pytest.mark.asyncio
@@ -26,5 +26,5 @@ async def test_ticket_create_with_restricted_user_should_fail(otobo_client:OTOBO
             )
         )
         pytest.fail("create_ticket should fail")
-    except OTOBOError as e:
+    except OTOBOError:
         pass

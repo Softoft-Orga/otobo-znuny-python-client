@@ -4,11 +4,11 @@ import random
 import pytest
 from datetime import datetime
 
-from mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_ticket_update, to_ws_ticket_search, \
+from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_ticket_update, to_ws_ticket_search, \
     to_ws_ticket_get
-from otobo.domain_models.ticket_models import TicketBase, IdName, TicketSearch, Article, TicketCreate, TicketUpdate
-from otobo.models.ticket_models import WsTicketBase, WsArticleDetail, WsDynamicField, WsTicketOutput
-from otobo.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketGetRequest, WsTicketSearchRequest
+from otobo_znuny.domain_models.ticket_models import IdName, TicketSearch, Article, TicketCreate, TicketUpdate
+from otobo_znuny.models.ticket_models import WsTicketBase, WsArticleDetail, WsDynamicField, WsTicketOutput
+from otobo_znuny.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketGetRequest, WsTicketSearchRequest
 
 
 def test_build_ticket_create_request_roundtrip():

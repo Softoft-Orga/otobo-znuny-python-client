@@ -2,10 +2,10 @@ from typing import Optional, Union, List, Literal
 
 from pydantic import BaseModel, Field, model_serializer, SecretStr
 
-from models.base_models import BooleanInteger
-from otobo.models.ticket_models import WsArticleDetail, WsDynamicField
-from otobo.models.ticket_models import WsTicketBase
-from util.safe_base_model import SafeBaseModel
+from otobo_znuny.models.base_models import BooleanInteger
+from otobo_znuny.models.ticket_models import WsArticleDetail, WsDynamicField
+from otobo_znuny.models.ticket_models import WsTicketBase
+from otobo_znuny.util.safe_base_model import SafeBaseModel
 
 
 class WsDynamicFieldFilter(BaseModel):

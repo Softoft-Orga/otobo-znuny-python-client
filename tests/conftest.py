@@ -10,10 +10,10 @@ import pytest
 from dotenv import load_dotenv
 from pydantic import SecretStr
 
-from otobo.clients.otobo_client import OTOBOZnunyClient
-from otobo.domain_models.otobo_client_config import ClientConfig
-from otobo.domain_models.basic_auth_model import BasicAuth
-from otobo.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     loop = asyncio.new_event_loop()

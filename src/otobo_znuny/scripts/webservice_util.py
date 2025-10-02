@@ -1,4 +1,4 @@
-from otobo.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 
 OPERATIONS: dict[str, TicketOperation] = {
     "get": TicketOperation.GET,

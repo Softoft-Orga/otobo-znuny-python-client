@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from otobo.models.ticket_models import WsTicketOutput
+from otobo_znuny.models.ticket_models import WsTicketOutput
 
 
 class WsTicketResponse(BaseModel):

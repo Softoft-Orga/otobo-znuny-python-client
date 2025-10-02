@@ -5,19 +5,19 @@ from unittest.mock import AsyncMock, call
 
 import pytest
 
-from otobo.clients import otobo_client
-from otobo.clients.otobo_client import OTOBOZnunyClient
-from otobo.domain_models.basic_auth_model import BasicAuth
-from otobo.domain_models.otobo_client_config import OTOBOClientConfig
-from otobo.domain_models.ticket_models import TicketCreate, TicketSearch
-from otobo.domain_models.ticket_operation import TicketOperation
-from otobo.models.response_models import (
-    TicketGetResponse,
-    TicketResponse,
-    TicketSearchResponse,
+from otobo_znuny.clients import otobo_client
+from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny.domain_models.ticket_models import TicketCreate, TicketSearch
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.models.response_models import (
+    WsTicketGetResponse,
+    WsTicketResponse,
+    WsTicketSearchResponse,
 )
-from otobo.models.ticket_models import TicketDetailOutput
-from otobo.util.otobo_errors import OTOBOError
+from otobo_znuny.models.ticket_models import WsTicketOutput
+from otobo_znuny.util.otobo_errors import OTOBOError
 
 
 class DummyResponse:
@@ -35,10 +35,9 @@ class DummyResponse:
 
 
 def make_client(async_client: AsyncMock | None = None) -> OTOBOZnunyClient:
-    config = OTOBOClientConfig(
+    config = ClientConfig(
         base_url="https://example.org/api/",
         webservice_name="Service",
-        auth=BasicAuth(UserLogin="user", Password="pass"),
         operation_url_map={
             TicketOperation.CREATE: "ticket-create",
             TicketOperation.SEARCH: "ticket-search",
@@ -46,7 +45,9 @@ def make_client(async_client: AsyncMock | None = None) -> OTOBOZnunyClient:
             TicketOperation.UPDATE: "ticket-update",
         },
     )
-    return OTOBOZnunyClient(config=config, client=async_client)
+    client = OTOBOZnunyClient(config=config, client=async_client)
+    client.login(BasicAuth(UserLogin="user", Password="pass"))
+    return client
 
 
 @pytest.mark.asyncio
@@ -59,7 +60,7 @@ async def test_send_combines_auth_with_payload(monkeypatch: pytest.MonkeyPatch) 
     result = await client._send(  # type: ignore[attr-defined]
         HTTPMethod.POST,
         TicketOperation.CREATE,
-        TicketResponse,
+        WsTicketResponse,
         data={"Extra": "Value"},
     )
 
@@ -72,7 +73,7 @@ async def test_send_combines_auth_with_payload(monkeypatch: pytest.MonkeyPatch) 
         "Extra": "Value",
     }
     assert kwargs["headers"]["Content-Type"] == "application/json"
-    assert isinstance(result, TicketResponse)
+    assert isinstance(result, WsTicketResponse)
     assert result.Ticket is not None
     assert result.Ticket.Title == "Example"
 
@@ -89,7 +90,7 @@ async def test_send_raises_otobo_error_when_error_in_payload() -> None:
         await client._send(  # type: ignore[attr-defined]
             HTTPMethod.POST,
             TicketOperation.CREATE,
-            TicketResponse,
+            WsTicketResponse,
             data={},
         )
     assert exc.value.code == "500"
@@ -137,11 +138,11 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
         "build_ticket_create_request",
         fake_build_request,
     )
-    response_ticket = TicketDetailOutput(TicketID=1)
+    response_ticket = WsTicketOutput(TicketID=1)
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
         captured["send_args"] = (method, operation, response_model, data)
-        return TicketResponse(Ticket=response_ticket)
+        return WsTicketResponse(Ticket=response_ticket)
 
     monkeypatch.setattr(client, "_send", fake_send)
 
@@ -164,7 +165,7 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
     method, operation, response_model, data = captured["send_args"]
     assert method == HTTPMethod.POST
     assert operation == TicketOperation.CREATE
-    assert response_model is TicketResponse
+    assert response_model is WsTicketResponse
     assert data == request_dump
     assert captured["parsed_arg"] is response_ticket
 
@@ -180,7 +181,7 @@ async def test_create_ticket_raises_when_missing_ticket(monkeypatch: pytest.Monk
     )
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
-        return TicketResponse(Ticket=None)
+        return WsTicketResponse(Ticket=None)
 
     monkeypatch.setattr(client, "_send", fake_send)
 
@@ -207,7 +208,7 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
         assert data == request_dump
-        return TicketGetResponse(Ticket=[response_payload])
+        return WsTicketGetResponse(Ticket=[response_payload])
 
     monkeypatch.setattr(client, "_send", fake_send)
 
@@ -219,7 +220,7 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
         return parsed_ticket
 
     monkeypatch.setattr(
-        otobo_client,
+        otobo_znuny.clients.otobo_client,
         "parse_ticket_detail_output",
         fake_parse,
     )
@@ -240,7 +241,7 @@ async def test_get_ticket_raises_when_not_single_ticket(monkeypatch: pytest.Monk
     )
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
-        return TicketGetResponse(Ticket=[])
+        return WsTicketGetResponse(Ticket=[])
 
     monkeypatch.setattr(client, "_send", fake_send)
 
@@ -265,7 +266,7 @@ async def test_search_tickets_returns_ids(monkeypatch: pytest.MonkeyPatch) -> No
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
         assert data == request_dump
-        return TicketSearchResponse(TicketID=[1, 2, 3])
+        return WsTicketSearchResponse(TicketID=[1, 2, 3])
 
     monkeypatch.setattr(client, "_send", fake_send)
 
@@ -284,7 +285,7 @@ async def test_search_tickets_handles_missing_ids(monkeypatch: pytest.MonkeyPatc
     )
 
     async def fake_send(method, operation, response_model, data=None):  # type: ignore[no-untyped-def]
-        return TicketSearchResponse(TicketID=None)
+        return WsTicketSearchResponse(TicketID=None)
 
     monkeypatch.setattr(client, "_send", fake_send)
 

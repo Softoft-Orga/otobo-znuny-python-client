@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from otobo.scripts.cli_interface import CommandRunner
+from otobo_znuny.scripts.cli_interface import CommandRunner
 
-from src.otobo.scripts import getting_started
+from src.otobo_znuny.scripts import getting_started
 
 
 class TestSlug:

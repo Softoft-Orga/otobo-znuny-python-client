@@ -1,10 +1,9 @@
 import subprocess
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from otobo.scripts.cli_interface import OtoboConsole, CmdResult, CommandRunner
+from otobo_znuny.scripts.cli_interface import OtoboConsole, CmdResult, CommandRunner
 
 
 class RunSpy:

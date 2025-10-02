@@ -1,6 +1,6 @@
 from pydantic import SecretStr
 
-from util.safe_base_model import SafeBaseModel
+from otobo_znuny.util.safe_base_model import SafeBaseModel
 
 
 class BasicAuth(SafeBaseModel):

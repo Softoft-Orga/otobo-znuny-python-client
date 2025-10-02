@@ -2,9 +2,8 @@ from pathlib import Path
 from typing import Dict, Any
 import yaml
 
-from otobo.domain_models.basic_auth_model import BasicAuth
-from otobo.domain_models.otobo_client_config import ClientConfig
-from otobo.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 
 TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
 
@@ -27,7 +26,6 @@ def _extract_operations_by_type(ws: Dict[str, Any]) -> Dict[TicketOperation, str
 def create_otobo_client_config(
         webservice_yaml_path: str | Path,
         base_url: str,
-        auth: BasicAuth,
         service: str,
 ) -> ClientConfig:
     data = _read_yaml(webservice_yaml_path)
@@ -37,6 +35,5 @@ def create_otobo_client_config(
     return ClientConfig(
         base_url=base_url,
         webservice_name=service,
-        auth=auth,
         operation_url_map=operations,
     )
