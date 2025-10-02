@@ -1,56 +1,56 @@
-from typing import List
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
 
 class WsTicketBase(BaseModel):
-    Title: str | None = None
-    Lock: str | None = None
-    LockID: int | None = None
-    QueueID: int | None = None
-    Queue: str | None = None
-    StateID: int | None = None
-    State: str | None = None
-    PriorityID: int | None = None
-    Priority: str | None = None
-    OwnerID: int | None = None
-    Owner: str | None = None
-    CustomerUser: str | None = None
-    TicketID: int | None = None
-    TicketNumber: str | None = None
-    Type: str | None = None
-    TypeID: int | None = None
-    CustomerID: str | None = None
-    CustomerUserID: str | None = None
-    CreateBy: int | None = None
-    ChangeBy: int | None = None
-    Created: str | None = None
-    Changed: str | None = None
+    Title: Optional[str] = None
+    Lock: Optional[str] = None
+    LockID: Optional[int] = None
+    QueueID: Optional[int] = None
+    Queue: Optional[str] = None
+    StateID: Optional[int] = None
+    State: Optional[str] = None
+    PriorityID: Optional[int] = None
+    Priority: Optional[str] = None
+    OwnerID: Optional[int] = None
+    Owner: Optional[str] = None
+    CustomerUser: Optional[str] = None
+    TicketID: Optional[int] = None
+    TicketNumber: Optional[str] = None
+    Type: Optional[str] = None
+    TypeID: Optional[int] = None
+    CustomerID: Optional[str] = None
+    CustomerUserID: Optional[str] = None
+    CreateBy: Optional[int] = None
+    ChangeBy: Optional[int] = None
+    Created: Optional[str] = None
+    Changed: Optional[str] = None
 
 
 class WsDynamicField(BaseModel):
     Name: str
-    Value: str | None = None
+    Value: Optional[str] = None
 
 
 class WsArticleDetail(BaseModel):
-    ArticleID: int | None = None
-    ArticleNumber: int | None = None
-    From: str | None = None
-    Subject: str | None = None
-    Body: str | None = None
-    ContentType: str | None = None
-    CreateTime: str | None = None
-    ChangeTime: str | None = None
-    To: str | None = None
-    MessageID: str | None = None
-    ChangeBy: int | None = None
-    CreateBy: int | None = None
+    ArticleID: Optional[int] = None
+    ArticleNumber: Optional[int] = None
+    From: Optional[str] = None
+    Subject: Optional[str] = None
+    Body: Optional[str] = None
+    ContentType: Optional[str] = None
+    CreateTime: Optional[str] = None
+    ChangeTime: Optional[str] = None
+    To: Optional[str] = None
+    MessageID: Optional[str] = None
+    ChangeBy: Optional[int] = None
+    CreateBy: Optional[int] = None
 
 
 class WsTicketOutput(WsTicketBase):
-    Article: List[WsArticleDetail] | WsArticleDetail | None = None
-    DynamicField: List[WsDynamicField] | None = None
+    Article: Union[List[WsArticleDetail], WsArticleDetail, None] = None
+    DynamicField: Optional[List[WsDynamicField]] = None
 
     def get_articles(self) -> List[WsArticleDetail]:
         if self.Article is None:

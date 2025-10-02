@@ -3,19 +3,18 @@ from typing import Optional, Union, List, Literal
 from pydantic import BaseModel, Field, model_serializer, SecretStr
 
 from otobo_znuny.models.base_models import BooleanInteger
-from otobo_znuny.models.ticket_models import WsArticleDetail, WsDynamicField
-from otobo_znuny.models.ticket_models import WsTicketBase
 from otobo_znuny.util.safe_base_model import SafeBaseModel
+from otobo_znuny.models.ticket_models import WsDynamicField, WsTicketBase, WsArticleDetail
 
 
 class WsDynamicFieldFilter(BaseModel):
     Empty: BooleanInteger = 1
-    Equals: str | None = None
-    Like: str | None = None
-    GreaterThan: str | None = None
-    GreaterThanEquals: str | None = None
-    SmallerThan: str | None = None
-    SmallerThanEquals: str | None = None
+    Equals: Optional[str] = None
+    Like: Optional[str] = None
+    GreaterThan: Optional[str] = None
+    GreaterThanEquals: Optional[str] = None
+    SmallerThan: Optional[str] = None
+    SmallerThanEquals: Optional[str] = None
 
 
 class WsAuthData(SafeBaseModel):
@@ -30,7 +29,7 @@ class WsTicketSearchRequest(BaseModel):
     LockIDs: Optional[List[int]] = None
     Queues: Optional[List[str]] = None
     QueueIDs: Optional[List[int]] = None
-    UseSubQueues: bool | None = False
+    UseSubQueues: Optional[bool] = False
     Types: Optional[List[str]] = None
     TypeIDs: Optional[List[int]] = None
     States: Optional[List[str]] = None
@@ -52,7 +51,7 @@ class WsTicketSearchRequest(BaseModel):
 
 
 class WsTicketGetRequest(BaseModel):
-    TicketID: int | None = None
+    TicketID: Optional[int] = None
     DynamicFields: BooleanInteger = 1
     Extended: BooleanInteger = 1
     AllArticles: BooleanInteger = 1
@@ -65,11 +64,11 @@ class WsTicketGetRequest(BaseModel):
 
 
 class WsTicketMutationRequest(BaseModel):
-    Ticket: WsTicketBase | None = None
-    Article: WsArticleDetail | None = None
-    DynamicField: list[WsDynamicField] | None = None
+    Ticket: Optional[WsTicketBase] = None
+    Article: Optional[WsArticleDetail] = None
+    DynamicField: Optional[list[WsDynamicField]] = None
 
 
 class WsTicketUpdateRequest(WsTicketMutationRequest):
-    TicketID: int | None = None
-    TicketNumber: str | None = None
+    TicketID: Optional[int] = None
+    TicketNumber: Optional[str] = None

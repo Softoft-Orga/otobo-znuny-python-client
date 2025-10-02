@@ -4,7 +4,7 @@ import logging
 import uuid
 from http import HTTPMethod
 from types import TracebackType
-from typing import Any, Self, TypeVar
+from typing import Any, Optional, Self, TypeVar, Union
 
 from httpx import AsyncClient
 from pydantic import BaseModel
@@ -28,12 +28,12 @@ from otobo_znuny.util.otobo_errors import OTOBOError
 
 
 class OTOBOZnunyClient:
-    def __init__(self, config: ClientConfig, client: AsyncClient | None = None, max_retries: int = 2):
+    def __init__(self, config: ClientConfig, client: Optional[AsyncClient] = None, max_retries: int = 2):
         self.config = config
         self._client: AsyncClient = client or AsyncClient()
         self.base_url = config.base_url.rstrip("/")
         self.webservice_name = config.webservice_name
-        self._auth: BasicAuth | None = None
+        self._auth: Optional[BasicAuth] = None
         self.operation_map = config.operation_url_map
         self.max_retries = max_retries
         self._logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class OTOBOZnunyClient:
     def _build_url(self, endpoint_name: str) -> str:
         return f"{self.base_url}/Webservice/{self.webservice_name}/{endpoint_name}"
 
-    def _extract_error(self, payload: Any) -> OTOBOError | None:
+    def _extract_error(self, payload: Any) -> Optional[OTOBOError]:
         if isinstance(payload, dict) and "Error" in payload:
             err = payload.get("Error") or {}
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
@@ -54,7 +54,7 @@ class OTOBOZnunyClient:
             method: HTTPMethod,
             operation: TicketOperation,
             response_model: type[T],
-            data: dict[str, Any] | None = None,
+            data: Optional[dict[str, Any]] = None,
     ) -> T:
         if not self._auth:
             raise RuntimeError("Client is not authenticated")
@@ -106,7 +106,7 @@ class OTOBOZnunyClient:
             raise RuntimeError("create returned no Ticket")
         return from_ws_ticket_detail(response.Ticket)
 
-    async def get_ticket(self, ticket_id: int | str) -> Ticket:
+    async def get_ticket(self, ticket_id: Union[int, str]) -> Ticket:
         request = to_ws_ticket_get(int(ticket_id))
         response: WsTicketGetResponse = await self._send(
             HTTPMethod.POST,
@@ -154,6 +154,6 @@ class OTOBOZnunyClient:
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type: type[BaseException] | None, exc: BaseException | None,
-                        tb: TracebackType | None) -> None:
+    async def __aexit__(self, exc_type: Optional[type[BaseException]], exc: Optional[BaseException],
+                        tb: Optional[TracebackType]) -> None:
         await self.aclose()

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ from otobo_znuny.models.ticket_models import WsDynamicField, WsArticleDetail, Ws
 logger = logging.getLogger(__name__)
 
 
-def try_parsing_datetime(value: str | None) -> datetime | None:
+def try_parsing_datetime(value: Optional[str]) -> Optional[datetime]:
     if value is None:
         return None
 
@@ -32,7 +32,7 @@ def to_ws_dynamic_field_items(dynamic_fields: dict[str, str]) -> list[WsDynamicF
     return [WsDynamicField(Name=key, Value=value) for key, value in dynamic_fields.items()]
 
 
-def from_ws_dynamic_field_items(dynamic_items: list[WsDynamicField] | None) -> dict[str, str]:
+def from_ws_dynamic_field_items(dynamic_items: Optional[list[WsDynamicField]]) -> dict[str, str]:
     return {item.Name: item.Value for item in dynamic_items or []}
 
 
@@ -61,7 +61,7 @@ def to_ws_dynamic_field_search(filter_model: DynamicFieldFilter) -> WsDynamicFie
     else:
         empty_flag = 0 if has_value_constraint else 1
 
-    equals_value: str | list[str] | None = None
+    equals_value: Union[str, list[str], None] = None
     if isinstance(filter_model.equals, list):
         equals_value = _to_str_list(filter_model.equals)
     elif filter_model.equals is not None:
@@ -104,13 +104,13 @@ def from_ws_article(article_otobo: WsArticleDetail) -> Article:
     )
 
 
-def _to_id_name(id_value: int | None, name_value: str | None) -> IdName | None:
+def _to_id_name(id_value: Optional[int], name_value: Optional[str]) -> Optional[IdName]:
     if id_value is None and name_value is None:
         return None
     return IdName(id=id_value, name=name_value)
 
 
-def _split_id_name_sequence(items: list[IdName] | None) -> tuple[list[int] | None, list[str] | None]:
+def _split_id_name_sequence(items: Optional[list[IdName]]) -> tuple[Optional[list[int]], Optional[list[str]]]:
     if not items:
         return None, None
     id_list = [x.id for x in items if x.id is not None] or None
@@ -118,7 +118,7 @@ def _split_id_name_sequence(items: list[IdName] | None) -> tuple[list[int] | Non
     return id_list, name_list
 
 
-def id_name(v: IdName | None) -> tuple[int | None, str | None]:
+def id_name(v: Optional[IdName]) -> tuple[Optional[int], Optional[str]]:
     return (v.id, v.name) if v else (None, None)
 
 
@@ -145,7 +145,7 @@ def from_ws_ticket_detail(ticket_otobo: WsTicketOutput) -> Ticket:
     )
 
 
-def to_ws_ticket_base(ticket: TicketBase) -> WsTicketBase | None:
+def to_ws_ticket_base(ticket: TicketBase) -> Optional[WsTicketBase]:
     queue_id, queue_name = id_name(ticket.queue)
     state_id, state_name = id_name(ticket.state)
     priority_id, priority_name = id_name(ticket.priority)

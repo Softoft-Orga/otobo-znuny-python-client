@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional, Union
 
 Permission = Literal["ro", "move_into", "create", "owner", "priority", "rw"]
 
@@ -20,7 +20,7 @@ class Args:
     def __init__(self):
         self._parts: list[str] = []
 
-    def opt(self, name: str, value: str | int | Path | None = None) -> Args:
+    def opt(self, name: str, value: Union[str, int, Path, None] = None) -> Args:
         if value is None:
             self._parts.append(name)
         else:
@@ -32,7 +32,7 @@ class Args:
             self._parts.append(name)
         return self
 
-    def repeat(self, name: str, values: list[str | int | Path]) -> Args:
+    def repeat(self, name: str, values: list[Union[str, int, Path]]) -> Args:
         for v in values:
             self._parts.extend([name, str(v)])
         return self
@@ -67,7 +67,7 @@ class OtoboConsole:
         self.no_ansi_default = no_ansi_default
         self.quiet_default = quiet_default
 
-    def _common(self, quiet: bool | None, no_ansi: bool | None) -> Args:
+    def _common(self, quiet: Optional[bool], no_ansi: Optional[bool]) -> Args:
         a = Args()
         a.flag("--no-ansi", enabled=self.no_ansi_default if no_ansi is None else no_ansi)
         a.flag("--quiet", enabled=self.quiet_default if quiet is None else quiet)
@@ -79,10 +79,10 @@ class OtoboConsole:
             first_name: str,
             last_name: str,
             email_address: str,
-            password: str | None = None,
-            groups: list[str] | None = None,
-            quiet: bool | None = None,
-            no_ansi: bool | None = None,
+            password: Optional[str] = None,
+            groups: Optional[list[str]] = None,
+            quiet: Optional[bool] = None,
+            no_ansi: Optional[bool] = None,
     ) -> CmdResult:
         a = self._common(quiet, no_ansi)
         a.opt("--user-name", user_name)
@@ -95,8 +95,8 @@ class OtoboConsole:
             a.repeat("--group", groups)
         return self.runner.run("Admin::User::Add", a.to_list())
 
-    def add_group(self, name: str, comment: str | None = None, quiet: bool | None = None,
-                  no_ansi: bool | None = None) -> CmdResult:
+    def add_group(self, name: str, comment: Optional[str] = None, quiet: Optional[bool] = None,
+                  no_ansi: Optional[bool] = None) -> CmdResult:
         a = self._common(quiet, no_ansi)
         a.opt("--name", name)
         if comment:
@@ -107,9 +107,9 @@ class OtoboConsole:
             self,
             user_name: str,
             group_name: str,
-            permission: Permission | str,
-            quiet: bool | None = None,
-            no_ansi: bool | None = None,
+            permission: Union[Permission, str],
+            quiet: Optional[bool] = None,
+            no_ansi: Optional[bool] = None,
     ) -> CmdResult:
         a = self._common(quiet, no_ansi)
         a.opt("--user-name", user_name)
@@ -121,16 +121,16 @@ class OtoboConsole:
             self,
             name: str,
             group: str,
-            system_address_id: int | None = None,
-            system_address_name: str | None = None,
-            comment: str | None = None,
-            unlock_timeout: int | None = None,
-            first_response_time: int | None = None,
-            update_time: int | None = None,
-            solution_time: int | None = None,
-            calendar: int | None = None,
-            quiet: bool | None = None,
-            no_ansi: bool | None = None,
+            system_address_id: Optional[int] = None,
+            system_address_name: Optional[str] = None,
+            comment: Optional[str] = None,
+            unlock_timeout: Optional[int] = None,
+            first_response_time: Optional[int] = None,
+            update_time: Optional[int] = None,
+            solution_time: Optional[int] = None,
+            calendar: Optional[int] = None,
+            quiet: Optional[bool] = None,
+            no_ansi: Optional[bool] = None,
     ) -> CmdResult:
         a = self._common(quiet, no_ansi)
         a.opt("--name", name)
@@ -153,8 +153,8 @@ class OtoboConsole:
             a.opt("--calendar", calendar)
         return self.runner.run("Admin::Queue::Add", a.to_list())
 
-    def add_webservice(self, name: str, source_path: str | Path, quiet: bool | None = None,
-                       no_ansi: bool | None = None) -> CmdResult:
+    def add_webservice(self, name: str, source_path: Union[str, Path], quiet: Optional[bool] = None,
+                       no_ansi: Optional[bool] = None) -> CmdResult:
         a = self._common(quiet, no_ansi)
         a.opt("--name", name)
         a.opt("--source-path", Path(source_path))

@@ -5,6 +5,9 @@ import string
 
 import typer
 from pydantic import BaseModel, ConfigDict
+from pathlib import Path
+import subprocess
+from typing import Optional, Union
 
 from otobo_znuny.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
@@ -21,9 +24,6 @@ PermissionMap = {
     "read": "ro",
     "full": "rw",
 }
-from pathlib import Path
-import subprocess
-
 
 def set_env_var(key: str, value: str, shell_rc: str = "~/.bashrc") -> None:
     rc_file = Path(shell_rc).expanduser()
@@ -117,7 +117,7 @@ def _write_text(path: Path, content: str, force: bool) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _get_running_container(name_patterns: list[str]) -> str | None:
+def _get_running_container(name_patterns: list[str]) -> Optional[str]:
     try:
         out = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=5)
         if out.returncode != 0:
@@ -147,14 +147,14 @@ OTOBO_DOCKER_WEBSERVICE_PATH = Path("/var/lib/docker/volumes/otobo_opt_otobo/_da
 
 
 def _build_system_environment(console_path: Path, webservices_dir: Path,
-                              container_name: str | None = None) -> SystemEnvironment:
+                              container_name: Optional[str] = None) -> SystemEnvironment:
     if container_name:
         return DockerEnvironment(container_name=container_name, console_path=console_path,
                                  webservices_dir=webservices_dir)
     return SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
 
 
-def _detect_environment() -> SystemEnvironment | None:
+def _detect_environment() -> Optional[SystemEnvironment]:
     container_name = _get_running_container(["otobo-web-1", "otobo_web_1"])
     if container_name:
         return DockerEnvironment(container_name=container_name, console_path=Path("/bin/otobo.Console.pl"),
@@ -169,24 +169,24 @@ def _detect_environment() -> SystemEnvironment | None:
 class GettingStartedConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    base_url: str | None = None
-    env_kind: SystemEnvironment | None = None
-    webservice_name: str | None = None
-    username: str | None = None
-    user_password_env: str | None = None
-    queue_name: str | None = None
-    group_name: str | None = None
-    ops: OperationUrlMap | None = None
-    ws_file: Path | None = None
+    base_url: Optional[str] = None
+    env_kind: Optional[SystemEnvironment] = None
+    webservice_name: Optional[str] = None
+    username: Optional[str] = None
+    user_password_env: Optional[str] = None
+    queue_name: Optional[str] = None
+    group_name: Optional[str] = None
+    ops: Optional[OperationUrlMap] = None
+    ws_file: Optional[Path] = None
 
 
 class GettingStarted:
     def __init__(self):
         self.config = GettingStartedConfig()
-        self.console: OtoboConsole | None = None
-        self.system_environment: SystemEnvironment | None = None
+        self.console: Optional[OtoboConsole] = None
+        self.system_environment: Optional[SystemEnvironment] = None
 
-    def _manually_select_environment(self) -> SystemEnvironment | None:
+    def _manually_select_environment(self) -> Optional[SystemEnvironment]:
         typer.echo("Could not automatically detect OTOBO environment.")
         use_docker = typer.confirm("Are you using OTOBO in Docker?")
 

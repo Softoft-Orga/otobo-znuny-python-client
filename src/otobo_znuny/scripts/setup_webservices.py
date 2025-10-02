@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import re
 from pathlib import Path
-from typing import Any, Annotated, Dict, List, Literal
+from typing import Any, Annotated, Dict, List, Literal, Optional, Union
 
 import typer
 import yaml
@@ -87,7 +87,7 @@ class WebServiceGenerator:
             self,
             webservice_name: str,
             enabled_operations: List[TicketOperation],
-            restricted_user: str | None = None,
+            restricted_user: Optional[str] = None,
             framework_version: str = "11.0.0",
     ) -> str:
         name = self._validate_name(webservice_name)
@@ -125,9 +125,9 @@ class WebServiceGenerator:
 
     def write_yaml_to_file(self, webservice_name: str,
                            enabled_operations: List[TicketOperation],
-                           restricted_user: str | None = None,
+                           restricted_user: Optional[str] = None,
                            framework_version: str = "11.0.0",
-                           file_path: str | Path = "webservice_config.yml") -> None:
+                           file_path: Union[str, Path] = "webservice_config.yml") -> None:
         out = self.generate_yaml(
             webservice_name=webservice_name,
             enabled_operations=enabled_operations,
@@ -156,7 +156,7 @@ class WebServiceGenerator:
             raise ValueError("Name must start with a letter and contain only A–Z, a–z, 0–9, _ or -.")
         return name
 
-    def _description(self, name: str, user: str | None) -> str:
+    def _description(self, name: str, user: Optional[str]) -> str:
         if user:
             return f"Webservice for '{name}'. Restricted to user '{user}'."
         return f"Webservice for '{name}'. Accessible by all permitted agents."
@@ -168,7 +168,7 @@ class WebServiceGenerator:
     def _create_empty_mapping(self) -> Dict[str, Any]:
         return {"MapType": "Keep", "MapTo": ""}
 
-    def _create_inbound_mapping(self, restricted_user: str | None) -> Dict[str, Any]:
+    def _create_inbound_mapping(self, restricted_user: Optional[str]) -> Dict[str, Any]:
         if restricted_user:
             return {
                 "Type": "Simple",
@@ -192,10 +192,10 @@ def generate(
                                                          help="Repeat for each: get, search, create, update",
                                                          case_sensitive=False),
         allow_user: Annotated[
-            str | None, typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
+            Optional[str], typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
         allow_all_agents: Annotated[bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")] = False,
         version: Annotated[str, typer.Option("--version", rich_help_panel="Optional")] = "11.0.0",
-        file: Annotated[str | None, typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional")] = None,
+        file: Annotated[Optional[str], typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional")] = None,
 ):
     if not (allow_user or allow_all_agents):
         typer.secho("Error: You must specify an authentication mode.", fg=typer.colors.RED)
