@@ -8,7 +8,7 @@ import pytest
 
 from otobo_znuny.scripts.cli_interface import CommandRunner
 
-from src.otobo_znuny.scripts import getting_started
+from otobo_znuny.scripts import getting_started
 
 
 class TestSlug:
@@ -196,4 +196,3 @@ class TestDetectEnvironment:
         monkeypatch.setattr(Path, "exists", lambda self: False, raising=False)
 
         assert getting_started._detect_environment() is None
-

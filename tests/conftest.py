@@ -7,6 +7,7 @@ from collections.abc import Generator
 # tests/conftest.py (Ergänzung)
 import mariadb
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
 from pydantic import SecretStr
 
@@ -14,6 +15,7 @@ from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
 from otobo_znuny.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny.domain_models.basic_auth_model import BasicAuth
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
+
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     loop = asyncio.new_event_loop()
@@ -71,7 +73,7 @@ def clear_otobo_tables() -> None:
         table="ticket",
     )
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def open_ticket_ai_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
@@ -79,7 +81,7 @@ async def open_ticket_ai_auth() -> BasicAuth:
     password = os.environ["OTOBO_DEMO_PASSWORD"]
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def security_user_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
@@ -87,15 +89,15 @@ async def security_user_auth() -> BasicAuth:
     password = "qiTSn3KmTFZWgoAyUKa84UkB"
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def otobo_client(open_ticket_ai_client_config: ClientConfig, open_ticket_ai_auth: BasicAuth) -> OTOBOZnunyClient:
     client = OTOBOZnunyClient(config=open_ticket_ai_client_config)
-    client.login(auth=open_ticket_ai_auth)
+    client.login(open_ticket_ai_auth)
     return client
 
 
-@pytest.fixture(scope="function")
-async def open_ticket_ai_client_config(open_ticket_ai_auth) -> ClientConfig:
+@pytest_asyncio.fixture(scope="function")
+async def open_ticket_ai_client_config() -> ClientConfig:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
     base_url = os.environ["OTOBO_BASE_URL"]

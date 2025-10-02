@@ -16,7 +16,7 @@ if scripts_pkg is None:
     scripts_pkg.__path__ = []  # type: ignore[attr-defined]
     sys.modules["scripts"] = scripts_pkg
 
-webservice_util = importlib.import_module("otobo.scripts.webservice_util")
+webservice_util = importlib.import_module("otobo_znuny.scripts.webservice_util")
 setattr(scripts_pkg, "webservice_util", webservice_util)
 sys.modules["scripts.webservice_util"] = webservice_util
 
