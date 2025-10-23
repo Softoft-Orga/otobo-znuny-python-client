@@ -155,20 +155,14 @@ init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
-[mypy-mariadb]
-ignore_missing_imports = true
-
 [tool.tox]
 requires = ["tox>=4", "tox-min-req>=0.0.9"]
-env_list = ["py{311,312,313}-{latest,min}"]
+env_list = ["py{311,312,313,314}-{latest,min}"]
 
 [tool.tox.testenv]
 package = "editable"
 extras = []
-deps = [
-    "pytest",
-    "pytest-asyncio"
-]
+deps = ["pytest", "pytest-asyncio"]
 commands = [["pytest", "-q"]]
 
 [tool.tox.testenv.min_req]

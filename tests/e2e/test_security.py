@@ -10,7 +10,6 @@ from otobo_znuny_python_client.util.otobo_errors import OTOBOError
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-@pytest.mark.e2e
 async def test_ticket_create_with_restricted_user_should_fail(otobo_client: OTOBOZnunyClient,
                                                               security_user_auth: BasicAuth) -> None:
     title = f"plain-{int(time.time())}"
