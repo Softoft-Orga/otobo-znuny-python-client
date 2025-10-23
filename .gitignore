@@ -84,3 +84,4 @@ fabric.properties
 *.orig
 *.tmp
 *.env
+uv.lock
