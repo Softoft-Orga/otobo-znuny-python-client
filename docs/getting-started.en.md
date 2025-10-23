@@ -1,6 +1,7 @@
 # Getting Started with the OTOBO Python Client
 
-The OTOBO Python client provides an asynchronous interface to the OTOBO REST API. This guide shows how to install the package and create a ticket.
+The OTOBO Python client provides an asynchronous interface to the OTOBO REST API. This guide shows how to install the
+package and create a ticket.
 
 ## Installation
 
@@ -11,7 +12,8 @@ pip install otobo
 ## Configuration
 
 ```python
-from otobo_znuny import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon, ArticleDetail,
+from otobo_znuny_python_client import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon,
+    ArticleDetail,
 
 TicketOperation
 

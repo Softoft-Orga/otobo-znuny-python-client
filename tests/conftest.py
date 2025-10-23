@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 from pydantic import SecretStr
 
 import mariadb
-from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.basic_auth_model import BasicAuth
-from otobo_znuny.domain_models.otobo_client_config import ClientConfig
-from otobo_znuny.domain_models.ticket_operation import TicketOperation
+from otobo_znuny_python_client.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny_python_client.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny_python_client.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
 
 
 @pytest.fixture(scope="session")

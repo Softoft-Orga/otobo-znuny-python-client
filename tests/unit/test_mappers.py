@@ -1,30 +1,30 @@
 # tests/test_mappers.py
-from datetime import datetime
 import random
+from datetime import datetime
 
 import pytest
 
-from otobo_znuny.domain_models.ticket_models import (
+from otobo_znuny_python_client.domain_models.ticket_models import (
     Article,
     IdName,
     TicketCreate,
     TicketSearch,
     TicketUpdate,
 )
-from otobo_znuny.mappers import (
+from otobo_znuny_python_client.mappers import (
     from_ws_ticket_detail,
     to_ws_ticket_create,
     to_ws_ticket_get,
     to_ws_ticket_search,
     to_ws_ticket_update,
 )
-from otobo_znuny.models.request_models import (
+from otobo_znuny_python_client.models.request_models import (
     WsTicketGetRequest,
     WsTicketMutationRequest,
     WsTicketSearchRequest,
     WsTicketUpdateRequest,
 )
-from otobo_znuny.models.ticket_models import (
+from otobo_znuny_python_client.models.ticket_models import (
     WsArticleDetail,
     WsDynamicField,
     WsTicketBase,
@@ -87,7 +87,7 @@ def test_build_ticket_create_request_roundtrip() -> None:
 
 @pytest.mark.unit
 def test_build_ticket_update_request_includes_ids_and_names() -> None:
-    random_ticket_id = random.randint(1, 10**12)
+    random_ticket_id = random.randint(1, 10 ** 12)
     t = TicketUpdate(
         id=random_ticket_id,
         number="TN-1",

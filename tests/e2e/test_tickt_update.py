@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.ticket_models import Article, IdName, TicketCreate, TicketUpdate
+from otobo_znuny_python_client.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny_python_client.domain_models.ticket_models import Article, IdName, TicketCreate, TicketUpdate
 
 
 @pytest.mark.e2e
@@ -39,6 +39,7 @@ async def test_update_title_and_priority(otobo_client: OTOBOZnunyClient) -> None
     assert got.priority
     assert (got.priority.name == "4 high" or got.priority.id == 4)
 
+
 @pytest.mark.e2e
 @pytest.mark.asyncio
 @pytest.mark.e2e
@@ -68,6 +69,7 @@ async def test_update_with_numeric_ids(otobo_client: OTOBOZnunyClient) -> None:
     got = await otobo_client.get_ticket(ticket_id=tid)
     assert got.priority
     assert (got.priority.id == 5 or got.priority.name in {"5 very high", "5"})
+
 
 @pytest.mark.e2e
 @pytest.mark.asyncio

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from otobo_znuny.cli.interface import OtoboCommandRunner
-from otobo_znuny.setup import bootstrap as getting_started
+from otobo_znuny_python_client.cli.interface import OtoboCommandRunner
+from otobo_znuny_python_client.setup import bootstrap as getting_started
 
 
 class TestSystemEnvironment:
@@ -30,7 +30,7 @@ class TestDockerEnvironment:
         console = Path("/bin/otobo.Console.pl")
         env = getting_started.DockerEnvironment(
             container_name="otobo-web-1",
-            console_path=console,
+            console_path=str(console),
             webservices_dir=tmp_path,
         )
 

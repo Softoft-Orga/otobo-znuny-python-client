@@ -1,14 +1,20 @@
 from typing import Any
 
 import pytest
+from pydantic import SecretStr
 
-from otobo_znuny.clients import otobo_client
-from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.basic_auth_model import BasicAuth
-from otobo_znuny.domain_models.otobo_client_config import ClientConfig
-from otobo_znuny.domain_models.ticket_models import TicketCreate, TicketSearch, IdName
-from otobo_znuny.domain_models.ticket_operation import TicketOperation
-from otobo_znuny.models.response_models import WsTicketResponse, WsTicketGetResponse, WsTicketSearchResponse
+from otobo_znuny_python_client.clients import otobo_client
+from otobo_znuny_python_client.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny_python_client.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny_python_client.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny_python_client.domain_models.ticket_models import IdName, TicketCreate, TicketSearch
+from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
+from otobo_znuny_python_client.models.response_models import (
+    WsTicketGetResponse,
+    WsTicketResponse,
+    WsTicketSearchResponse,
+)
+from otobo_znuny_python_client.models.ticket_models import WsTicketOutput
 
 
 def make_client(*, async_client: Any = None) -> OTOBOZnunyClient:
@@ -23,7 +29,7 @@ def make_client(*, async_client: Any = None) -> OTOBOZnunyClient:
         },
     )
     client = OTOBOZnunyClient(config=config, client=async_client)
-    auth = BasicAuth(user_login="user", password="pass")
+    auth = BasicAuth(user_login="user", password=SecretStr("pass"))
     client.login(auth)
     return client
 
@@ -48,7 +54,7 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
     )
 
     async def fake_send(*args, **kwargs):  # type: ignore[no-untyped-def]
-        return WsTicketResponse(Ticket={"TicketID": "123", "TicketNumber": "2025123"})
+        return WsTicketResponse(Ticket=WsTicketOutput(TicketID=123, TicketNumber="2025123"))
 
     def fake_parse(arg: Any) -> Any:
         return TicketCreate(
@@ -182,7 +188,7 @@ async def test_search_tickets_returns_ids(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(otobo_client.OTOBOZnunyClient, "_send", fake_send)
 
     client = make_client()
-    search_criteria = TicketSearch(state_type=["open"])
+    search_criteria = TicketSearch()
     result = await client.search_tickets(search_criteria)
 
     assert result == [10, 20, 30]

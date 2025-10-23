@@ -1,15 +1,15 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "otobo_znuny"
-version = "1.3.0"
-description = "Python client library for the OTOBO / Znuny REST API"
+name = "otobo-znuny-python-client"
+dynamic = ["version"]
+description = "Python client for OTOBO/Znuny ticket systems"
 readme = "README.md"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Tobias Bück", email = "tab@softoft.de" }]
-requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
@@ -36,7 +36,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "mypy>=1.18.2",
     "ruff>=0.13.1",
-    "types-pyyaml>=6.0.12.20250915",
+    "types-pyyaml>=6.0.12",
     "types-requests>=2.32.4.20250913",
 ]
 
@@ -48,8 +48,15 @@ documentation = "https://otobo-docs.softoft.de/administration/automation/rest-ap
 where = ["src"]
 
 [tool.pytest.ini_options]
+addopts = "-q -m unit"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+log_cli = true
+log_cli_level = "INFO"
+markers = [
+    "e2e: end-to-end tests hitting live OTOBO",
+    "unit: fast unit tests",
+]
 
 [dependency-groups]
 dev = [
@@ -77,30 +84,45 @@ line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
-  # Core pycodestyle/pyflakes
-  "E", "F", "W",
-  # isort (import order)
-  "I",
-  # flake8-bugbear (common bugs & smells)
-  "B",
-  # pyupgrade (modernize for target-version)
-  "UP",
-  # pep8-naming
-  "N",
-  # import conventions
-  "TID",
-  # complexity & simplifications
-  "C90", "C4", "RET", "SIM",
-  # quality/safety
-  "ARG", "BLE", "COM", "ISC", "PIE", "Q", "DTZ", "YTT",
-  # tests/style
-  "PT",
-  # print / debug
-  "T20",
-  # Ruff-specific
-  "RUF",
-  # Security (Bandit rules via Ruff) — strict; tune if noisy
-  "S",
+    # Core pycodestyle/pyflakes
+    "E", "F", "W",
+    # isort (import order)
+    "I",
+    # flake8-bugbear (common bugs & smells)
+    "B",
+    # pyupgrade (modernize for target-version)
+    "UP",
+    # pep8-naming
+    "N",
+    # import conventions
+    "TID",
+    # complexity & simplifications
+    "C90", "C4", "RET", "SIM",
+    # quality/safety
+    "ARG", "BLE", "COM", "ISC", "PIE", "Q", "DTZ", "YTT",
+    # tests/style
+    "PT",
+    # print / debug
+    "T20",
+    # Ruff-specific
+    "RUF",
+    # Security (Bandit rules via Ruff) — strict; tune if noisy
+    "S",
+]
+
+# Ignore security and complexity rules in tests
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Use of assert detected (asserts are expected in tests)
+    "S105", # Possible hardcoded password
+    "S106", # Possible hardcoded password function argument
+    "S108", # Probable insecure usage of temp file/directory
+    "ARG001", # Unused function argument (fixtures)
+    "ARG002", # Unused method argument
+    "PLR2004", # Magic value used in comparison
+    "PLR0913", # Too many arguments
+    "PLR0915", # Too many statements
+    "C901", # Function is too complex
 ]
 
 [tool.ruff.lint.isort]

@@ -1,8 +1,8 @@
-from pathlib import Path
 import subprocess
 import time
+from pathlib import Path
 
-from otobo_znuny.cli.interface import OtoboCommandRunner, OtoboConsole
+from otobo_znuny_python_client.cli.interface import OtoboCommandRunner, OtoboConsole
 
 
 def run_docker_compose_command(cmd: str, compose_path: Path):
