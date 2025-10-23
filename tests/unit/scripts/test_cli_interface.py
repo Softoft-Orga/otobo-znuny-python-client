@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from otobo_znuny.cli.interface import CmdResult, OtoboCommandRunner, OtoboConsole
+from otobo_znuny_python_client.cli.interface import CmdResult, OtoboCommandRunner, OtoboConsole
 
 
 class RunSpy:
@@ -24,9 +24,10 @@ def spy(monkeypatch):
     monkeypatch.setattr(subprocess, "run", s)
     return s
 
+
 @pytest.mark.unit
 def test_add_user_with_groups_docker(spy) -> None:
-    runner = OtoboCommandRunner.from_docker(container="otobo-web-1", console_path="./bin/otobo.Console.pl")
+    runner = OtoboCommandRunner.from_docker()
     console = OtoboConsole(runner)
     res = console.add_user(
         user_name="tobi",
@@ -64,9 +65,10 @@ def test_add_user_with_groups_docker(spy) -> None:
     ]
     assert spy.calls[-1]["cmd"] == expected
 
+
 @pytest.mark.unit
 def test_add_group_local_with_flags(spy) -> None:
-    runner = OtoboCommandRunner.from_local(console_path="/opt/otobo/bin/otobo.Console.pl")
+    runner = OtoboCommandRunner.from_local()
     console = OtoboConsole(runner)
     res = console.add_group(name="Support", comment="All agents", quiet=True, no_ansi=False)
     assert res.ok is True

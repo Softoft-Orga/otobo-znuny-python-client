@@ -1,6 +1,7 @@
 # Python OTOBO Client Library
 
-An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx` and `pydantic` for type safety
+An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx` and `pydantic` for
+type safety
 and ease of use.
 
 ## Documentation
@@ -36,7 +37,7 @@ The published sections include:
 Install from PyPI:
 
 ```bash
-pip install otobo_znuny
+pip install otobo_znuny_python_client
 ```
 
 ## License

@@ -4,14 +4,14 @@ services:
     user: mysql:mysql
     restart: always
     logging:
-        driver: "local"
-        options:
-            max-file: "5"
-            max-size: "10m"
+      driver: "local"
+      options:
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - mariadb_data:/var/lib/mysql
     ports:
-       - "3306:3306"
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${OTOBO_DB_ROOT_PASSWORD:?err}
 
@@ -22,17 +22,17 @@ services:
   web:
     image: ${OTOBO_IMAGE_OTOBO:-rotheross/otobo:latest-11_0}
     cap_drop:
-        - ALL
+      - ALL
     depends_on:
       - db
       - elastic
       - redis
     restart: always
     logging:
-        driver: "local"
-        options:
-            max-file: "5"
-            max-size: "10m"
+      driver: "local"
+      options:
+        max-file: "5"
+        max-size: "10m"
     ports:
       - "${OTOBO_WEB_HTTP_IPADDR:-0.0.0.0}:${OTOBO_WEB_HTTP_PORT:-80}:5000"
     volumes:
@@ -44,15 +44,15 @@ services:
   daemon:
     image: ${OTOBO_IMAGE_OTOBO:-rotheross/otobo:latest-11_0}
     cap_drop:
-        - ALL
+      - ALL
     depends_on:
       - web
     restart: always
     logging:
-        driver: "local"
-        options:
-            max-file: "5"
-            max-size: "10m"
+      driver: "local"
+      options:
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - opt_otobo:/opt/otobo
     command: daemon
@@ -63,10 +63,10 @@ services:
     image: ${OTOBO_IMAGE_OTOBO_ELASTICSEARCH:-rotheross/otobo-elasticsearch:latest-11_0}
     restart: always
     logging:
-        driver: "local"
-        options:
-            max-file: "5"
-            max-size: "10m"
+      driver: "local"
+      options:
+        max-file: "5"
+        max-size: "10m"
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: ${OTOBO_ELASTICSEARCH_ES_JAVA_OPTS:?err}
@@ -80,17 +80,17 @@ services:
     user: redis:redis
     restart: always
     logging:
-        driver: "local"
-        options:
-            max-file: "5"
-            max-size: "10m"
+      driver: "local"
+      options:
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - redis_data:/data
     healthcheck:
       test: redis-cli ping
 
 volumes:
-  mariadb_data: {}
-  opt_otobo: {}
-  elasticsearch_data: {}
-  redis_data: {}
+  mariadb_data: { }
+  opt_otobo: { }
+  elasticsearch_data: { }
+  redis_data: { }

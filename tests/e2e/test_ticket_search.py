@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.ticket_models import Article, IdName, TicketCreate, TicketSearch
+from otobo_znuny_python_client.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny_python_client.domain_models.ticket_models import Article, IdName, TicketCreate, TicketSearch
 
 
 @pytest.mark.e2e

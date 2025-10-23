@@ -8,16 +8,15 @@ from types import ModuleType
 import pytest
 from typer.testing import CliRunner
 
-from otobo_znuny.setup.webservices import generator as sw
+from otobo_znuny_python_client.setup.webservices import generator as sw
 
-# Ensure the legacy scripts import resolves to the package under src/otobo/scripts.
 scripts_pkg = sys.modules.get("scripts")
 if scripts_pkg is None:
     scripts_pkg = ModuleType("scripts")
     scripts_pkg.__path__ = []  # type: ignore[attr-defined]
     sys.modules["scripts"] = scripts_pkg
 
-webservice_util = importlib.import_module("otobo_znuny.scripts.webservice_util")
+webservice_util = importlib.import_module("otobo_znuny_python_client.scripts.webservice_util")
 scripts_pkg.webservice_util = webservice_util
 sys.modules["scripts.webservice_util"] = webservice_util
 
