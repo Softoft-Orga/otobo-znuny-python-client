@@ -1,14 +1,6 @@
-from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
+from otobo_znuny_python_client.setup.webservices.utils import (
+    OPERATIONS,
+    generate_enabled_operations_list,
+)
 
-OPERATIONS: dict[str, TicketOperation] = {
-    "get": TicketOperation.GET,
-    "search": TicketOperation.SEARCH,
-    "create": TicketOperation.CREATE,
-    "update": TicketOperation.UPDATE,
-}
-
-
-def generate_enabled_operations_list(
-        enabled_operations: list[str],
-) -> list[TicketOperation]:
-    return [OPERATIONS[s.lower().strip()] for s in enabled_operations if s.lower().strip() in OPERATIONS]
+__all__ = ["OPERATIONS", "generate_enabled_operations_list"]
