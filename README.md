@@ -6,6 +6,16 @@ and ease of use.
 
 ## Documentation
 
+The project documentation is built with [MkDocs](https://www.mkdocs.org/) and the
+[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme. You can browse the
+Markdown sources locally or serve the documentation site with:
+
+```bash
+uv run --group docs mkdocs serve
+```
+
+The published sections include:
+
 - [Getting started (English)](docs/getting-started.en.md)
 - [Einstieg (Deutsch)](docs/getting-started.de.md)
 

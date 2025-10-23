@@ -1,0 +1,30 @@
+site_name: OTOBO Znuny Python Client
+site_description: Documentation for the OTOBO / Znuny REST API Python client.
+repo_url: https://github.com/Softoft-GmbH/otobo-znuny-python-client
+repo_name: Softoft-GmbH/otobo-znuny-python-client
+nav:
+  - Home: index.md
+  - Getting Started:
+      - English: getting-started.en.md
+      - Deutsch: getting-started.de.md
+  - Interactive Installation Setup: interactive-installation-setup.md
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+    - search.share
+    - toc.integrate
+  language: en
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+plugins:
+  - search
+edit_uri: edit/main/docs/
+docs_dir: docs

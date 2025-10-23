@@ -39,6 +39,10 @@ dev = [
     "types-pyyaml>=6.0.12",
     "types-requests>=2.32.4.20250913",
 ]
+docs = [
+    "mkdocs>=1.6.1,<2.0",
+    "mkdocs-material>=9.5.24,<10.0",
+]
 
 [project.urls]
 homepage = "https://otobo-docs.softoft.de/administration/automation/rest-api"
@@ -66,6 +70,10 @@ dev = [
     "ruff>=0.13.1",
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20250913",
+]
+docs = [
+    "mkdocs>=1.6.1,<2.0",
+    "mkdocs-material>=9.5.24,<10.0",
 ]
 
 

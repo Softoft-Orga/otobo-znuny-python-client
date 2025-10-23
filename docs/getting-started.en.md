@@ -55,4 +55,5 @@ await client.create_ticket(payload)
 
 ## Further Reading
 
-See the [project README](../README.md) for more features and examples.
+See the [project README on GitHub](https://github.com/Softoft-GmbH/otobo-znuny-python-client/blob/main/README.md)
+for more features and examples.
