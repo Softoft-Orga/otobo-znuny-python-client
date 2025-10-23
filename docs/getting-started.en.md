@@ -6,16 +6,21 @@ package and create a ticket.
 ## Installation
 
 ```bash
-pip install otobo
+pip install otobo_znuny_python_client
 ```
 
 ## Configuration
 
 ```python
-from otobo_znuny_python_client import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon,
+from otobo_znuny_python_client import (
     ArticleDetail,
-
-TicketOperation
+    AuthData,
+    OTOBOClient,
+    OTOBOClientConfig,
+    TicketCommon,
+    TicketCreateParams,
+    TicketOperation,
+)
 
 config = OTOBOClientConfig(
     base_url="https://your-otobo-server/nph-genericinterface.pl",
