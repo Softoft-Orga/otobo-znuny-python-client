@@ -18,5 +18,5 @@ class _DummyConnection:
         pass
 
 
-def connect(**kwargs) -> _DummyConnection:  # noqa: ANN003
+def connect(**kwargs) -> _DummyConnection:
     return _DummyConnection(**kwargs)

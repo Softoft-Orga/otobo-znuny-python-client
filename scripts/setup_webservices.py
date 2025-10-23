@@ -1,4 +1,9 @@
+#!/usr/bin/env python3
+"""Web service generator script."""
+
 from __future__ import annotations
 
-from otobo_znuny.scripts.setup_webservices import WebServiceGenerator  # noqa: F401
+if __name__ == "__main__":
+    from otobo_znuny.setup.webservices.generator import app
+    app()
 

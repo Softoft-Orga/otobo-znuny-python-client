@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from otobo_znuny.scripts.cli_interface import OtoboConsole, CmdResult, CommandRunner
+from otobo_znuny.cli.interface import CmdResult, OtoboCommandRunner, OtoboConsole
 
 
 class RunSpy:
@@ -26,7 +26,7 @@ def spy(monkeypatch):
 
 @pytest.mark.unit
 def test_add_user_with_groups_docker(spy) -> None:
-    runner = CommandRunner.from_docker(container="otobo-web-1", console_path="./bin/otobo.Console.pl")
+    runner = OtoboCommandRunner.from_docker(container="otobo-web-1", console_path="./bin/otobo.Console.pl")
     console = OtoboConsole(runner)
     res = console.add_user(
         user_name="tobi",
@@ -66,7 +66,7 @@ def test_add_user_with_groups_docker(spy) -> None:
 
 @pytest.mark.unit
 def test_add_group_local_with_flags(spy) -> None:
-    runner = CommandRunner.from_local(console_path="/opt/otobo/bin/otobo.Console.pl")
+    runner = OtoboCommandRunner.from_local(console_path="/opt/otobo/bin/otobo.Console.pl")
     console = OtoboConsole(runner)
     res = console.add_group(name="Support", comment="All agents", quiet=True, no_ansi=False)
     assert res.ok is True
@@ -84,7 +84,7 @@ def test_add_group_local_with_flags(spy) -> None:
 
 @pytest.mark.unit
 def test_add_queue_all_options(spy) -> None:
-    runner = CommandRunner.from_docker(container="c1", console_path="/bin/console.pl")
+    runner = OtoboCommandRunner.from_docker(container="c1", console_path="/bin/console.pl")
     console = OtoboConsole(runner)
     res = console.add_queue(
         name="Raw",

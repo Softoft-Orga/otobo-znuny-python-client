@@ -1,8 +1,9 @@
 """Unit tests for complete ticket operations (create, get, update, search)."""
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
 from otobo_znuny.domain_models.basic_auth_model import BasicAuth
@@ -10,18 +11,11 @@ from otobo_znuny.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny.domain_models.ticket_models import (
     Article,
     IdName,
-    Ticket,
     TicketCreate,
     TicketSearch,
     TicketUpdate,
 )
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
-from otobo_znuny.models.response_models import (
-    WsTicketGetResponse,
-    WsTicketResponse,
-    WsTicketSearchResponse,
-)
-from otobo_znuny.models.ticket_models import WsTicketOutput
 
 
 @pytest.fixture
@@ -73,9 +67,9 @@ async def test_create_ticket_complete_flow(client: OTOBOZnunyClient) -> None:
             "Type": "Incident",
             "TypeID": "1",
             "CustomerUserID": "customer@test.com",
-        }
+        },
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -102,9 +96,12 @@ async def test_create_ticket_complete_flow(client: OTOBOZnunyClient) -> None:
     assert result.id == 123
     assert result.number == "2025010212300001"
     assert result.title == "Test Ticket"
-    assert result.queue and result.queue.name == "Raw"
-    assert result.state and result.state.name == "new"
-    assert result.priority and result.priority.name == "3 normal"
+    assert result.queue
+    assert result.queue.name == "Raw"
+    assert result.state
+    assert result.state.name == "new"
+    assert result.priority
+    assert result.priority.name == "3 normal"
 
 
 @pytest.mark.unit
@@ -124,10 +121,10 @@ async def test_get_ticket_by_id(client: OTOBOZnunyClient) -> None:
                 "StateID": "4",
                 "Priority": "4 high",
                 "PriorityID": "4",
-            }
-        ]
+            },
+        ],
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -138,8 +135,10 @@ async def test_get_ticket_by_id(client: OTOBOZnunyClient) -> None:
 
     assert result.id == 456
     assert result.title == "Retrieved Ticket"
-    assert result.queue and result.queue.name == "Support"
-    assert result.priority and result.priority.name == "4 high"
+    assert result.queue
+    assert result.queue.name == "Support"
+    assert result.priority
+    assert result.priority.name == "4 high"
 
 
 @pytest.mark.unit
@@ -153,9 +152,9 @@ async def test_update_ticket_title_and_priority(client: OTOBOZnunyClient) -> Non
             "Title": "Updated Title",
             "Priority": "5 very high",
             "PriorityID": "5",
-        }
+        },
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -172,7 +171,8 @@ async def test_update_ticket_title_and_priority(client: OTOBOZnunyClient) -> Non
 
     assert result.id == 789
     assert result.title == "Updated Title"
-    assert result.priority and result.priority.name == "5 very high"
+    assert result.priority
+    assert result.priority.name == "5 very high"
 
 
 @pytest.mark.unit
@@ -188,11 +188,11 @@ async def test_update_ticket_with_article(client: OTOBOZnunyClient) -> None:
                     "Subject": "Note",
                     "Body": "This is a note",
                     "ContentType": "text/plain; charset=utf-8",
-                }
+                },
             ],
-        }
+        },
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -221,7 +221,7 @@ async def test_search_tickets_returns_ids(client: OTOBOZnunyClient) -> None:
     """Test searching tickets and getting IDs."""
     # Mock HTTP response
     response_data = {"TicketID": [1, 2, 3, 4, 5]}
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -244,7 +244,7 @@ async def test_search_tickets_no_results(client: OTOBOZnunyClient) -> None:
     """Test searching tickets with no results."""
     # Mock HTTP response
     response_data = {"TicketID": None}
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -271,8 +271,8 @@ async def test_search_and_get_tickets(client: OTOBOZnunyClient) -> None:
                 "Title": "Ticket 10",
                 "Queue": "Raw",
                 "State": "new",
-            }
-        ]
+            },
+        ],
     }
     get_data_2 = {
         "Ticket": [
@@ -281,10 +281,10 @@ async def test_search_and_get_tickets(client: OTOBOZnunyClient) -> None:
                 "Title": "Ticket 20",
                 "Queue": "Support",
                 "State": "open",
-            }
-        ]
+            },
+        ],
     }
-    
+
     search_response = AsyncMock()
     search_response.json = lambda: search_data
     search_response.text = "{}"
@@ -301,7 +301,7 @@ async def test_search_and_get_tickets(client: OTOBOZnunyClient) -> None:
     get_response_2.status_code = 200
 
     client._client.request = AsyncMock(  # type: ignore
-        side_effect=[search_response, get_response_1, get_response_2]
+        side_effect=[search_response, get_response_1, get_response_2],
     )
 
     search = TicketSearch(queues=[IdName(name="Raw")])
@@ -326,9 +326,9 @@ async def test_create_ticket_with_numeric_ids(client: OTOBOZnunyClient) -> None:
             "StateID": "1",
             "PriorityID": "4",
             "TypeID": "1",
-        }
+        },
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -352,8 +352,10 @@ async def test_create_ticket_with_numeric_ids(client: OTOBOZnunyClient) -> None:
     result = await client.create_ticket(ticket)
 
     assert result.id == 555
-    assert result.queue and result.queue.id == 2
-    assert result.priority and result.priority.id == 4
+    assert result.queue
+    assert result.queue.id == 2
+    assert result.priority
+    assert result.priority.id == 4
 
 
 @pytest.mark.unit
@@ -366,9 +368,9 @@ async def test_update_ticket_with_numeric_priority(client: OTOBOZnunyClient) -> 
             "TicketID": "666",
             "PriorityID": "5",
             "Priority": "5 very high",
-        }
+        },
     }
-    
+
     mock_response = AsyncMock()
     mock_response.json = lambda: response_data
     mock_response.text = "{}"
@@ -383,4 +385,5 @@ async def test_update_ticket_with_numeric_priority(client: OTOBOZnunyClient) -> 
     result = await client.update_ticket(update)
 
     assert result.id == 666
-    assert result.priority and result.priority.id == 5
+    assert result.priority
+    assert result.priority.id == 5

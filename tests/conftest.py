@@ -4,22 +4,23 @@ import os
 import re
 from collections.abc import Generator
 
-# tests/conftest.py (Ergänzung)
-import mariadb
 import pytest
 from dotenv import load_dotenv
 from pydantic import SecretStr
 
+import mariadb
 from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
+
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
+
 
 def _safe_identifier(name: str) -> tuple[str, str | None]:
     if not re.fullmatch(r"[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?", name):
@@ -50,10 +51,8 @@ def clear_table(
     try:
         cur = conn.cursor()
         if db_override:
-            print(f"Clearing table {db_override}.{tbl}")
             cur.execute(f"DELETE FROM {db_override}.{tbl}")
         else:
-            print(f"Clearing table {tbl}")
             cur.execute(f"DELETE FROM {tbl}")
     finally:
         conn.close()
@@ -72,7 +71,8 @@ def clear_otobo_tables() -> None:
         table="ticket",
     )
 
-@pytest.fixture(scope="function")
+
+@pytest.fixture
 def open_ticket_ai_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
@@ -80,7 +80,8 @@ def open_ticket_ai_auth() -> BasicAuth:
     password = os.environ["OTOBO_DEMO_PASSWORD"]
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest.fixture(scope="function")
+
+@pytest.fixture
 def security_user_auth() -> BasicAuth:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
@@ -88,14 +89,15 @@ def security_user_auth() -> BasicAuth:
     password = "qiTSn3KmTFZWgoAyUKa84UkB"
     return BasicAuth(user_login=user, password=SecretStr(password))
 
-@pytest.fixture(scope="function")
+
+@pytest.fixture
 def otobo_client(open_ticket_ai_client_config: ClientConfig, open_ticket_ai_auth: BasicAuth) -> OTOBOZnunyClient:
     client = OTOBOZnunyClient(config=open_ticket_ai_client_config)
     client.login(open_ticket_ai_auth)
     return client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def open_ticket_ai_client_config() -> ClientConfig:
     load_dotenv(os.path.join(os.path.dirname(__file__), "e2e", "test_demo_env"))
 
@@ -107,9 +109,8 @@ def open_ticket_ai_client_config() -> ClientConfig:
         TicketOperation.GET: "ticket-get",
         TicketOperation.UPDATE: "ticket-update",
     }
-    config = ClientConfig(
+    return ClientConfig(
         base_url=base_url,
         webservice_name=service,
         operation_url_map=operations,
     )
-    return config

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 from pathlib import Path
+import sys
 from types import ModuleType
 
 import pytest
-
 
 if "mariadb" not in sys.modules:
     mariadb_stub = ModuleType("mariadb")

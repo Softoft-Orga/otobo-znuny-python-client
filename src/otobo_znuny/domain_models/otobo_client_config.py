@@ -1,4 +1,5 @@
 from typing import TypeAlias
+
 from pydantic import BaseModel
 
 from otobo_znuny.domain_models.ticket_operation import TicketOperation

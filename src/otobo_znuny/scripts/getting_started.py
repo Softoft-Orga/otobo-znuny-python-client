@@ -1,17 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
 import secrets
 import string
-
-import typer
-from pydantic import BaseModel, ConfigDict
-from pathlib import Path
 import subprocess
-from typing import Optional, Union
+
+from pydantic import BaseModel, ConfigDict
+import typer
 
 from otobo_znuny.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
-from otobo_znuny.scripts.cli_interface import OtoboConsole, CommandRunner
+from otobo_znuny.scripts.cli_interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny.scripts.setup_webservices import WebServiceGenerator
 
 app = typer.Typer()
@@ -29,20 +28,13 @@ def set_env_var(key: str, value: str, shell_rc: str = "~/.bashrc") -> None:
     rc_file = Path(shell_rc).expanduser()
     export_line = f'export {key}="{value}"\n'
 
-    # Read existing lines
-    if rc_file.exists():
-        lines = rc_file.read_text().splitlines()
-    else:
-        lines = []
+    lines = rc_file.read_text().splitlines() if rc_file.exists() else []
 
-    # Remove old definition if present
     lines = [line for line in lines if not line.strip().startswith(f"export {key}=")]
     lines.append(export_line.strip())
 
-    # Write back
     rc_file.write_text("\n".join(lines) + "\n")
 
-    # Apply immediately for current session
     subprocess.run(f"export {key}='{value}'", shell=True, executable="/bin/bash")
 
 
@@ -51,8 +43,8 @@ class SystemEnvironment:
         self.console_path = console_path
         self.webservices_dir = webservices_dir
 
-    def build_command_runner(self) -> CommandRunner:
-        return CommandRunner.from_local(console_path=self.console_path)
+    def build_command_runner(self) -> OtoboCommandRunner:
+        return OtoboCommandRunner.from_local(console_path=self.console_path)
 
     def __str__(self) -> str:
         return f"SystemEnvironment(console_path={self.console_path}, webservices_dir={self.webservices_dir})"
@@ -64,12 +56,11 @@ class SystemEnvironment:
     def ticket_system_name(self):
         if "otobo" in str(self.console_path).lower():
             return "otobo"
-        elif "znuny" in str(self.console_path).lower():
+        if "znuny" in str(self.console_path).lower():
             return "znuny"
-        elif "otrs" in str(self.console_path).lower():
+        if "otrs" in str(self.console_path).lower():
             return "otrs"
-        else:
-            return "Unknown"
+        return "Unknown"
 
 
 class DockerEnvironment(SystemEnvironment):
@@ -77,12 +68,12 @@ class DockerEnvironment(SystemEnvironment):
                  webservices_dir):
         super().__init__(
             console_path=console_path,
-            webservices_dir=webservices_dir
+            webservices_dir=webservices_dir,
         )
         self.container_name = container_name
 
-    def build_command_runner(self) -> CommandRunner:
-        return CommandRunner.from_docker(container=self.container_name, console_path=self.console_path)
+    def build_command_runner(self) -> OtoboCommandRunner:
+        return OtoboCommandRunner.from_docker(container=self.container_name, console_path=self.console_path)
 
     def __str__(self) -> str:
         return f"DockerEnvironment(container_name={self.container_name}, console_path={self.console_path}, webservices_dir={self.webservices_dir})"
@@ -117,14 +108,14 @@ def _write_text(path: Path, content: str, force: bool) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _get_running_container(name_patterns: list[str]) -> Optional[str]:
+def _get_running_container(name_patterns: list[str]) -> str | None:
     try:
         out = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True, timeout=5)
         if out.returncode != 0:
             return None
         output_names = out.stdout.splitlines()
         for name in name_patterns:
-            if any([name in n for n in output_names]):
+            if any(name in n for n in output_names):
                 return name
     except Exception:
         return None
@@ -134,7 +125,7 @@ def _get_running_container(name_patterns: list[str]) -> Optional[str]:
 CONSOLE_PATHS = [
     Path("/opt/otobo/bin/otobo.Console.pl"),
     Path("/opt/znuny/bin/otrs.Console.pl"),
-    Path("/opt/otrs/bin/otrs.Console.pl")
+    Path("/opt/otrs/bin/otrs.Console.pl"),
 ]
 
 WEBSERVICES_PATHS = [
@@ -147,14 +138,14 @@ OTOBO_DOCKER_WEBSERVICE_PATH = Path("/var/lib/docker/volumes/otobo_opt_otobo/_da
 
 
 def _build_system_environment(console_path: Path, webservices_dir: Path,
-                              container_name: Optional[str] = None) -> SystemEnvironment:
+                              container_name: str | None = None) -> SystemEnvironment:
     if container_name:
         return DockerEnvironment(container_name=container_name, console_path=console_path,
                                  webservices_dir=webservices_dir)
     return SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
 
 
-def _detect_environment() -> Optional[SystemEnvironment]:
+def _detect_environment() -> SystemEnvironment | None:
     container_name = _get_running_container(["otobo-web-1", "otobo_web_1"])
     if container_name:
         return DockerEnvironment(container_name=container_name, console_path=Path("/bin/otobo.Console.pl"),
@@ -169,31 +160,31 @@ def _detect_environment() -> Optional[SystemEnvironment]:
 class GettingStartedConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    base_url: Optional[str] = None
-    env_kind: Optional[SystemEnvironment] = None
-    webservice_name: Optional[str] = None
-    username: Optional[str] = None
-    user_password_env: Optional[str] = None
-    queue_name: Optional[str] = None
-    group_name: Optional[str] = None
-    ops: Optional[OperationUrlMap] = None
-    ws_file: Optional[Path] = None
+    base_url: str | None = None
+    env_kind: SystemEnvironment | None = None
+    webservice_name: str | None = None
+    username: str | None = None
+    user_password_env: str | None = None
+    queue_name: str | None = None
+    group_name: str | None = None
+    ops: OperationUrlMap | None = None
+    ws_file: Path | None = None
 
 
 class GettingStarted:
     def __init__(self):
         self.config = GettingStartedConfig()
-        self.console: Optional[OtoboConsole] = None
-        self.system_environment: Optional[SystemEnvironment] = None
+        self.console: OtoboConsole | None = None
+        self.system_environment: SystemEnvironment | None = None
 
-    def _manually_select_environment(self) -> Optional[SystemEnvironment]:
+    def _manually_select_environment(self) -> SystemEnvironment | None:
         typer.echo("Could not automatically detect OTOBO environment.")
         use_docker = typer.confirm("Are you using OTOBO in Docker?")
 
         if use_docker:
             container_name = typer.prompt(
                 "Container name (In normal installation either otobo-web-1 or otobo_web_1",
-                default="otobo-web-1"
+                default="otobo-web-1",
             )
             console_path = Path(typer.prompt("Console path inside container", default="/bin/otobo.Console.pl"))
             webservices_dir = Path(
@@ -205,14 +196,13 @@ class GettingStarted:
                 typer.echo(f"Invalid Docker environment: {env}")
                 return None
             return env
-        else:
-            console_path = Path(typer.prompt("Console path", default="/opt/otobo/bin/otobo.Console.pl"))
-            webservices_dir = Path(typer.prompt("Webservices directory", default="/opt/otobo/var/webservices"))
-            env = SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
-            if not env.is_valid_environment():
-                typer.echo(f"Invalid local environment: {env}")
-                return None
-            return env
+        console_path = Path(typer.prompt("Console path", default="/opt/otobo/bin/otobo.Console.pl"))
+        webservices_dir = Path(typer.prompt("Webservices directory", default="/opt/otobo/var/webservices"))
+        env = SystemEnvironment(console_path=console_path, webservices_dir=webservices_dir)
+        if not env.is_valid_environment():
+            typer.echo(f"Invalid local environment: {env}")
+            return None
+        return env
 
     def _create_user(self):
         create_user = typer.confirm("Create a new user for Open Ticket AI?", default=True)
@@ -227,7 +217,7 @@ class GettingStarted:
                 first_name=user_first,
                 last_name=user_last,
                 email_address=user_email,
-                password=user_password
+                password=user_password,
             )
             if not cmd_result.ok:
                 typer.echo(f"Error creating user: {cmd_result.err}")
@@ -247,7 +237,7 @@ class GettingStarted:
         self.console = OtoboConsole(self.system_environment.build_command_runner())
         typer.echo(f"Detected: {self.system_environment}")
         self._create_user()
-        webservice_url = typer.prompt("Generic Interface URL",
+        typer.prompt("Generic Interface URL",
                                       default=f"http://localhost/{self.system_environment.ticket_system_name}/"
                                               f"nph-genericinterface.pl")
         ws_name = typer.prompt("Webservice name", default="OpenTicketAI")

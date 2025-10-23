@@ -1,14 +1,35 @@
 # tests/test_mappers.py
-import pytest
+from datetime import datetime
 import random
 
-from datetime import datetime
+import pytest
 
-from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_ticket_update, to_ws_ticket_search, \
-    to_ws_ticket_get
-from otobo_znuny.domain_models.ticket_models import IdName, TicketSearch, Article, TicketCreate, TicketUpdate
-from otobo_znuny.models.ticket_models import WsTicketBase, WsArticleDetail, WsDynamicField, WsTicketOutput
-from otobo_znuny.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketGetRequest, WsTicketSearchRequest
+from otobo_znuny.domain_models.ticket_models import (
+    Article,
+    IdName,
+    TicketCreate,
+    TicketSearch,
+    TicketUpdate,
+)
+from otobo_znuny.mappers import (
+    from_ws_ticket_detail,
+    to_ws_ticket_create,
+    to_ws_ticket_get,
+    to_ws_ticket_search,
+    to_ws_ticket_update,
+)
+from otobo_znuny.models.request_models import (
+    WsTicketGetRequest,
+    WsTicketMutationRequest,
+    WsTicketSearchRequest,
+    WsTicketUpdateRequest,
+)
+from otobo_znuny.models.ticket_models import (
+    WsArticleDetail,
+    WsDynamicField,
+    WsTicketBase,
+    WsTicketOutput,
+)
 
 
 @pytest.mark.unit
@@ -34,7 +55,6 @@ def test_build_ticket_create_request_roundtrip() -> None:
     assert req_ticket.Type == "Unclassified"
     assert req_ticket.CustomerUser == "user1"
     articles = req.Article if isinstance(req.Article, list) else [req.Article] if req.Article else []
-    print(articles)
     assert articles[0].Subject == "S"
     assert articles[0].Body == "B"
     wire = WsTicketOutput(

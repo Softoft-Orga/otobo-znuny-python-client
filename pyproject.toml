@@ -34,7 +34,6 @@ dependencies = [
 dev = [
     "pytest>=8.3.5",
     "pytest-asyncio>=0.24.0",
-    "mariadb>=1.1.13",
     "mypy>=1.18.2",
     "ruff>=0.13.1",
     "types-pyyaml>=6.0.12.20250915",
@@ -56,16 +55,99 @@ asyncio_default_fixture_loop_scope = "function"
 dev = [
     "pytest>=8.3.5",
     "pytest-asyncio>=0.24.0",
-    "mariadb>=1.1.13",
     "mypy>=1.18.2",
     "ruff>=0.13.1",
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20250913",
 ]
 
+
+[tool.ruff]
+src = ["src"]
+target-version = "py311"
+line-length = 100
+fix = true
+unsafe-fixes = true
+show-fixes = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+  # Core pycodestyle/pyflakes
+  "E", "F", "W",
+  # isort (import order)
+  "I",
+  # flake8-bugbear (common bugs & smells)
+  "B",
+  # pyupgrade (modernize for target-version)
+  "UP",
+  # pep8-naming
+  "N",
+  # import conventions
+  "TID",
+  # complexity & simplifications
+  "C90", "C4", "RET", "SIM",
+  # quality/safety
+  "ARG", "BLE", "COM", "ISC", "PIE", "Q", "DTZ", "YTT",
+  # tests/style
+  "PT",
+  # print / debug
+  "T20",
+  # Ruff-specific
+  "RUF",
+  # Security (Bandit rules via Ruff) — strict; tune if noisy
+  "S",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["otobo_znuny"]
+combine-as-imports = true
+force-sort-within-sections = true
+
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
+mypy_path = ["src"]
+namespace_packages = true
+explicit_package_bases = true
+
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_return_any = true
+no_implicit_reexport = true
+
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 
 [mypy-mariadb]
 ignore_missing_imports = true
+
+[tool.tox]
+requires = ["tox>=4", "tox-min-req>=0.0.9"]
+env_list = ["py{311,312,313}-{latest,min}"]
+
+[tool.tox.testenv]
+package = "editable"
+extras = []
+deps = [
+    "pytest",
+    "pytest-asyncio"
+]
+commands = [["pytest", "-q"]]
+
+[tool.tox.testenv.min_req]
+min = 1

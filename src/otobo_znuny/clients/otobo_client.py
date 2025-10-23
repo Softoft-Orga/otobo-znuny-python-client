@@ -1,60 +1,73 @@
 import asyncio
+from http import HTTPMethod
 import json
 import logging
-import uuid
-from http import HTTPMethod
 from types import TracebackType
-from typing import Any, Optional, Self, TypeVar, Union
+from typing import Any, Self, TypeVar
+from urllib.parse import quote
+import uuid
 
 from httpx import AsyncClient
 from pydantic import BaseModel
 
 from otobo_znuny.domain_models.basic_auth_model import BasicAuth
-from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_auth, to_ws_ticket_get, \
-    to_ws_ticket_update, \
-    to_ws_ticket_search
 from otobo_znuny.domain_models.otobo_client_config import ClientConfig
-from otobo_znuny.domain_models.ticket_models import TicketSearch, TicketUpdate, TicketCreate, Ticket
+from otobo_znuny.domain_models.ticket_models import Ticket, TicketCreate, TicketSearch, TicketUpdate
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.mappers import (
+    from_ws_ticket_detail,
+    to_ws_auth,
+    to_ws_ticket_create,
+    to_ws_ticket_get,
+    to_ws_ticket_search,
+    to_ws_ticket_update,
+)
 from otobo_znuny.models.request_models import (
     WsTicketMutationRequest,
 )
 from otobo_znuny.models.response_models import (
-    WsTicketSearchResponse,
     WsTicketGetResponse,
     WsTicketResponse,
+    WsTicketSearchResponse,
 )
 from otobo_znuny.util.otobo_errors import OTOBOError
 
 
 class OTOBOZnunyClient:
-    def __init__(self, config: ClientConfig, client: Optional[AsyncClient] = None, max_retries: int = 2):
+    def __init__(self,
+                 config: ClientConfig,
+                 client: AsyncClient | None = None,
+                 web_service_url_base="Webservice"):
         self.config = config
-        self._client: AsyncClient = client or AsyncClient()
         self.base_url = config.base_url.rstrip("/")
-        self.webservice_name = config.webservice_name
-        self._auth: Optional[BasicAuth] = None
+        self.webservice_name = config.webservice_name.strip("/")
         self.operation_map = config.operation_url_map
-        self.max_retries = max_retries
+        self._web_service_url_base = (web_service_url_base or "").strip("/")
         self._logger = logging.getLogger(__name__)
+        self._owns_client = client is None
+        self._client: AsyncClient = client or AsyncClient(base_url=self.base_url)
+        self._auth: BasicAuth | None = None
+        parts = [p for p in [self._web_service_url_base, self.webservice_name] if p]
+        self._ws_base_path = "/".join(quote(p, safe=":@$+,;=-._~()") for p in parts)
 
     def _build_url(self, endpoint_name: str) -> str:
-        return f"{self.base_url}/Webservice/{self.webservice_name}/{endpoint_name}"
+        ep = "/".join(quote(s, safe=":@$+,;=-._~()") for s in endpoint_name.strip("/").split("/"))
+        return f"/{self._ws_base_path}/{ep}" if self._ws_base_path else f"/{ep}"
 
-    def _extract_error(self, payload: Any) -> Optional[OTOBOError]:
+    def _extract_error(self, payload: Any) -> OTOBOError | None:
         if isinstance(payload, dict) and "Error" in payload:
             err = payload.get("Error") or {}
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
         return None
 
-    T = TypeVar('T', bound=BaseModel)
+    T = TypeVar("T", bound=BaseModel)
 
     async def _send(
             self,
             method: HTTPMethod,
             operation: TicketOperation,
             response_model: type[T],
-            data: Optional[dict[str, Any]] = None,
+            data: dict[str, Any] | None = None,
     ) -> T:
         if not self._auth:
             raise RuntimeError("Client is not authenticated")
@@ -106,7 +119,7 @@ class OTOBOZnunyClient:
             raise RuntimeError("create returned no Ticket")
         return from_ws_ticket_detail(response.Ticket)
 
-    async def get_ticket(self, ticket_id: Union[int, str]) -> Ticket:
+    async def get_ticket(self, ticket_id: int | str) -> Ticket:
         request = to_ws_ticket_get(int(ticket_id))
         response: WsTicketGetResponse = await self._send(
             HTTPMethod.POST,
@@ -118,7 +131,7 @@ class OTOBOZnunyClient:
         if len(tickets) != 1:
             raise RuntimeError(f"expected exactly one ticket, got {len(tickets)}")
         return from_ws_ticket_detail(
-            tickets[0]
+            tickets[0],
         )
 
     async def update_ticket(self, ticket: TicketUpdate) -> Ticket:
@@ -154,6 +167,6 @@ class OTOBOZnunyClient:
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type: Optional[type[BaseException]], exc: Optional[BaseException],
-                        tb: Optional[TracebackType]) -> None:
+    async def __aexit__(self, exc_type: type[BaseException] | None, exc: BaseException | None,
+                        tb: TracebackType | None) -> None:
         await self.aclose()

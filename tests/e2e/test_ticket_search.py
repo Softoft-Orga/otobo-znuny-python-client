@@ -1,9 +1,10 @@
 # tests/test_ticket_search.py
 import time
+
 import pytest
 
 from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny.domain_models.ticket_models import IdName, Article, TicketSearch, TicketCreate
+from otobo_znuny.domain_models.ticket_models import Article, IdName, TicketCreate, TicketSearch
 
 
 @pytest.mark.e2e
@@ -19,7 +20,7 @@ async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyCl
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
             article=Article(subject="A", body="alpha", content_type="text/plain; charset=utf-8"),
-        )
+        ),
     )
     t2 = await otobo_client.create_ticket(
         TicketCreate(
@@ -30,7 +31,7 @@ async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyCl
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
             article=Article(subject="B", body="bravo", content_type="text/plain; charset=utf-8"),
-        )
+        ),
     )
     t3 = await otobo_client.create_ticket(
         TicketCreate(
@@ -41,7 +42,7 @@ async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyCl
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
             article=Article(subject="C", body="charlie", content_type="text/plain; charset=utf-8"),
-        )
+        ),
     )
     created_ids = {t1.id, t2.id, t3.id}
     assert all(i is not None and i > 0 for i in created_ids)
@@ -54,6 +55,7 @@ async def test_search_returns_ids_for_created_tickets(otobo_client: OTOBOZnunyCl
     )
     found_ids = set(await otobo_client.search_tickets(search))
     assert created_ids.issubset(found_ids)
+
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
@@ -68,7 +70,7 @@ async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClien
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
             article=Article(subject="X", body="x-body", content_type="text/plain; charset=utf-8"),
-        )
+        ),
     )
     await otobo_client.create_ticket(
         TicketCreate(
@@ -79,7 +81,7 @@ async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClien
             type=IdName(name="Incident"),
             customer_user="customer@localhost.de",
             article=Article(subject="Y", body="y-body", content_type="text/plain; charset=utf-8"),
-        )
+        ),
     )
 
     search = TicketSearch(
@@ -96,6 +98,7 @@ async def test_search_and_get_returns_full_tickets(otobo_client: OTOBOZnunyClien
     for t in tickets:
         assert t.articles
         assert isinstance(t.get_articles()[0].body, str)
+
 
 @pytest.mark.e2e
 @pytest.mark.asyncio

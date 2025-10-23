@@ -1,0 +1,96 @@
+services:
+  db:
+    image: ${OTOBO_IMAGE_DB:-mariadb:10.5}
+    user: mysql:mysql
+    restart: always
+    logging:
+        driver: "local"
+        options:
+            max-file: "5"
+            max-size: "10m"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+       - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${OTOBO_DB_ROOT_PASSWORD:?err}
+
+    command: --max-allowed-packet=136314880 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-log-file-size=268435456 --query-cache-size=${OTOBO_DB_QUERY_CACHE_SIZE:-33554432}
+    healthcheck:
+      test: mysqladmin -h db --user=root --password='${OTOBO_DB_ROOT_PASSWORD}' ping
+
+  web:
+    image: ${OTOBO_IMAGE_OTOBO:-rotheross/otobo:latest-11_0}
+    cap_drop:
+        - ALL
+    depends_on:
+      - db
+      - elastic
+      - redis
+    restart: always
+    logging:
+        driver: "local"
+        options:
+            max-file: "5"
+            max-size: "10m"
+    ports:
+      - "${OTOBO_WEB_HTTP_IPADDR:-0.0.0.0}:${OTOBO_WEB_HTTP_PORT:-80}:5000"
+    volumes:
+      - opt_otobo:/opt/otobo
+    command: web
+    healthcheck:
+      test: curl -s -f http://localhost:5000/robots.txt
+
+  daemon:
+    image: ${OTOBO_IMAGE_OTOBO:-rotheross/otobo:latest-11_0}
+    cap_drop:
+        - ALL
+    depends_on:
+      - web
+    restart: always
+    logging:
+        driver: "local"
+        options:
+            max-file: "5"
+            max-size: "10m"
+    volumes:
+      - opt_otobo:/opt/otobo
+    command: daemon
+    healthcheck:
+      test: ./bin/otobo.Daemon.pl status | grep 'Daemon running'
+
+  elastic:
+    image: ${OTOBO_IMAGE_OTOBO_ELASTICSEARCH:-rotheross/otobo-elasticsearch:latest-11_0}
+    restart: always
+    logging:
+        driver: "local"
+        options:
+            max-file: "5"
+            max-size: "10m"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: ${OTOBO_ELASTICSEARCH_ES_JAVA_OPTS:?err}
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: curl -s -f http://localhost:9200/_cat/health
+
+  redis:
+    image: ${OTOBO_IMAGE_REDIS:-redis:6.0-alpine}
+    user: redis:redis
+    restart: always
+    logging:
+        driver: "local"
+        options:
+            max-file: "5"
+            max-size: "10m"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: redis-cli ping
+
+volumes:
+  mariadb_data: {}
+  opt_otobo: {}
+  elasticsearch_data: {}
+  redis_data: {}

@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Any
+
 import yaml
 
 from otobo_znuny.domain_models.otobo_client_config import ClientConfig
@@ -8,13 +9,13 @@ from otobo_znuny.domain_models.ticket_operation import TicketOperation
 TYPE_TO_ENUM = {op.type: op for op in TicketOperation}
 
 
-def _read_yaml(path: Union[str, Path]) -> Dict[str, Any]:
+def _read_yaml(path: str | Path) -> dict[str, Any]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
 
 
-def _extract_operations_by_type(ws: Dict[str, Any]) -> Dict[TicketOperation, str]:
+def _extract_operations_by_type(ws: dict[str, Any]) -> dict[TicketOperation, str]:
     ops = ws.get("Provider", {}).get("Operation", {}) or {}
-    result: Dict[TicketOperation, str] = {}
+    result: dict[TicketOperation, str] = {}
     for endpoint_name, cfg in ops.items():
         type_str = str((cfg or {}).get("Type", "")).strip()
         enum_key = TYPE_TO_ENUM.get(type_str)
@@ -24,7 +25,7 @@ def _extract_operations_by_type(ws: Dict[str, Any]) -> Dict[TicketOperation, str
 
 
 def create_otobo_client_config(
-        webservice_yaml_path: Union[str, Path],
+        webservice_yaml_path: str | Path,
         base_url: str,
         service: str,
 ) -> ClientConfig:

@@ -4,7 +4,7 @@ import pytest
 
 from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
 from otobo_znuny.domain_models.basic_auth_model import BasicAuth
-from otobo_znuny.domain_models.ticket_models import TicketCreate, IdName, Article
+from otobo_znuny.domain_models.ticket_models import Article, IdName, TicketCreate
 from otobo_znuny.util.otobo_errors import OTOBOError
 
 
@@ -25,7 +25,7 @@ async def test_ticket_create_with_restricted_user_should_fail(otobo_client:OTOBO
                 type=IdName(name="Incident"),
                 customer_user="customer@localhost.de",
                 article=Article(subject="Plain", body="Hello world", content_type="text/plain; charset=utf-8"),
-            )
+            ),
         )
         pytest.fail("create_ticket should fail")
     except OTOBOError:

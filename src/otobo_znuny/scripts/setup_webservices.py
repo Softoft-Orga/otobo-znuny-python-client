@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import copy
-import re
 from pathlib import Path
-from typing import Any, Annotated, Dict, List, Literal, Optional, Union
+import re
+from typing import Annotated, Any, Literal
 
+from pydantic import BaseModel
 import typer
 import yaml
-from pydantic import BaseModel
 
 from otobo_znuny.domain_models.ticket_operation import TicketOperation
 from otobo_znuny.scripts.webservice_util import generate_enabled_operations_list
@@ -27,7 +27,7 @@ app = typer.Typer(
 
 class RouteMappingConfig(BaseModel):
     Route: str
-    RequestMethod: List[str]
+    RequestMethod: list[str]
     ParserBackend: Literal["JSON"] = "JSON"
 
 
@@ -35,15 +35,15 @@ class ProviderOperationConfig(BaseModel):
     Type: str
     Description: str
     IncludeTicketData: Literal["0", "1"]
-    MappingInbound: Dict[str, Any]
-    MappingOutbound: Dict[str, Any]
+    MappingInbound: dict[str, Any]
+    MappingOutbound: dict[str, Any]
 
 
 class OperationSpec(BaseModel):
     op: TicketOperation
     route: str
     description: str
-    methods: List[str]
+    methods: list[str]
     include_ticket_data: Literal["0", "1"]
 
 
@@ -86,13 +86,14 @@ class WebServiceGenerator:
     def generate_yaml(
             self,
             webservice_name: str,
-            enabled_operations: List[TicketOperation],
-            restricted_user: Optional[str] = None,
+            enabled_operations: list[TicketOperation],
+            restricted_user: str | None = None,
             framework_version: str = "11.0.0",
     ) -> str:
         name = self._validate_name(webservice_name)
-        enabled_operation_specs: list[OperationSpec] = [self.DEFAULT_SPECS[o] for o in enabled_operations if
-                                                        o in self.DEFAULT_SPECS]
+        enabled_operation_specs: list[OperationSpec] = [
+            self.DEFAULT_SPECS[o] for o in enabled_operations if o in self.DEFAULT_SPECS
+        ]
         if not enabled_operation_specs:
             raise ValueError("No operations enabled.")
         inbound_base = self._create_inbound_mapping(restricted_user)
@@ -124,10 +125,10 @@ class WebServiceGenerator:
         return yaml.dump(data, sort_keys=False, indent=2, Dumper=NoAliasDumper, explicit_start=True)
 
     def write_yaml_to_file(self, webservice_name: str,
-                           enabled_operations: List[TicketOperation],
-                           restricted_user: Optional[str] = None,
+                           enabled_operations: list[TicketOperation],
+                           restricted_user: str | None = None,
                            framework_version: str = "11.0.0",
-                           file_path: Union[str, Path] = "webservice_config.yml") -> None:
+                           file_path: str | Path = "webservice_config.yml") -> None:
         out = self.generate_yaml(
             webservice_name=webservice_name,
             enabled_operations=enabled_operations,
@@ -136,12 +137,12 @@ class WebServiceGenerator:
         )
         Path(file_path).write_text(out, encoding="utf-8")
 
-    def _add_operation(self, s: OperationSpec, inbound: Dict[str, Any]) -> None:
+    def _add_operation(self, s: OperationSpec, inbound: dict[str, Any]) -> None:
         self.route_mapping[s.op.operation_type] = RouteMappingConfig(
             Route=f"/{s.route}",
             RequestMethod=s.methods,
         ).model_dump()
-        self.operations[s.provider_name] = ProviderOperationConfig(
+        self.operations[s.op.operation_type] = ProviderOperationConfig(
             Type=s.op.type,
             Description=s.description,
             IncludeTicketData=s.include_ticket_data,
@@ -156,57 +157,83 @@ class WebServiceGenerator:
             raise ValueError("Name must start with a letter and contain only A–Z, a–z, 0–9, _ or -.")
         return name
 
-    def _description(self, name: str, user: Optional[str]) -> str:
+    def _description(self, name: str, user: str | None) -> str:
         if user:
             return f"Webservice for '{name}'. Restricted to user '{user}'."
         return f"Webservice for '{name}'. Accessible by all permitted agents."
 
-    def _create_simple_empty_mapping(self) -> Dict[str, Any]:
-        return {"Type": "Simple", "Config": {"KeyMapDefault": self._create_empty_mapping(),
-                                             "ValueMapDefault": self._create_empty_mapping()}}
+    def _create_simple_empty_mapping(self) -> dict[str, Any]:
+        return {
+            "Type": "Simple",
+            "Config": {
+                "KeyMapDefault": self._create_empty_mapping(),
+                "ValueMapDefault": self._create_empty_mapping(),
+            },
+        }
 
-    def _create_empty_mapping(self) -> Dict[str, Any]:
+    def _create_empty_mapping(self) -> dict[str, Any]:
         return {"MapType": "Keep", "MapTo": ""}
 
-    def _create_inbound_mapping(self, restricted_user: Optional[str]) -> Dict[str, Any]:
+    def _create_inbound_mapping(self, restricted_user: str | None) -> dict[str, Any]:
         if restricted_user:
             return {
                 "Type": "Simple",
                 "Config": {
                     "KeyMapDefault": self._create_empty_mapping(),
                     "KeyMapExact": {"UserLogin": "UserLogin"},
-                    "ValueMap": {"UserLogin": {"ValueMapRegEx": {".*": restricted_user}}},
+                    "ValueMap": {
+                        "UserLogin": {"ValueMapRegEx": {".*": restricted_user}}
+                    },
                     "ValueMapDefault": self._create_empty_mapping(),
                 },
             }
         return self._create_simple_empty_mapping()
 
-    def _outbound_mapping(self) -> Dict[str, Any]:
+    def _outbound_mapping(self) -> dict[str, Any]:
         return self._create_simple_empty_mapping()
 
 
 @app.command()
 def generate(
         name: Annotated[str, typer.Option("--name", rich_help_panel="Required")],
-        enabled_operations_raw: List[str] = typer.Option(..., "--op", "-o",
-                                                         help="Repeat for each: get, search, create, update",
-                                                         case_sensitive=False),
+        enabled_operations_raw: list[str] = typer.Option(
+            ...,
+            "--op",
+            "-o",
+            help="Repeat for each: get, search, create, update",
+            case_sensitive=False,
+        ),
         allow_user: Annotated[
-            Optional[str], typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth")] = None,
-        allow_all_agents: Annotated[bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")] = False,
-        version: Annotated[str, typer.Option("--version", rich_help_panel="Optional")] = "11.0.0",
-        file: Annotated[Optional[str], typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional")] = None,
+            str | None,
+            typer.Option("--allow-user", metavar="USERNAME", rich_help_panel="Auth"),
+        ] = None,
+        allow_all_agents: Annotated[
+            bool, typer.Option("--allow-all-agents", rich_help_panel="Auth")
+        ] = False,
+        version: Annotated[
+            str, typer.Option("--version", rich_help_panel="Optional")
+        ] = "11.0.0",
+        file: Annotated[
+            str | None,
+            typer.Option("--file", metavar="FILENAME", rich_help_panel="Optional"),
+        ] = None,
 ):
     if not (allow_user or allow_all_agents):
-        typer.secho("Error: You must specify an authentication mode.", fg=typer.colors.RED)
+        typer.secho(
+            "Error: You must specify an authentication mode.", fg=typer.colors.RED
+        )
         raise typer.Exit(code=1)
     if allow_user and allow_all_agents:
-        typer.secho("Error: --allow-user and --allow-all-agents are mutually exclusive.", fg=typer.colors.RED)
+        typer.secho(
+            "Error: --allow-user and --allow-all-agents are mutually exclusive.",
+            fg=typer.colors.RED,
+        )
         raise typer.Exit(code=1)
-    enabled_operations: list[TicketOperation] = generate_enabled_operations_list(enabled_operations_raw)
+    enabled_operations: list[TicketOperation] = generate_enabled_operations_list(
+        enabled_operations_raw
+    )
     gen = WebServiceGenerator()
     try:
-
         if file:
             gen.write_yaml_to_file(
                 webservice_name=name,
@@ -215,7 +242,9 @@ def generate(
                 framework_version=version,
                 file_path=file,
             )
-            typer.secho("Successfully generated webservice configuration.", fg=typer.colors.GREEN)
+            typer.secho(
+                "Successfully generated webservice configuration.", fg=typer.colors.GREEN
+            )
             typer.secho(f"File: {file}")
         else:
             out = gen.generate_yaml(
