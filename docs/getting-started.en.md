@@ -12,10 +12,15 @@ pip install otobo
 ## Configuration
 
 ```python
-from otobo_znuny_python_client import OTOBOClient, OTOBOClientConfig, AuthData, TicketCreateParams, TicketCommon,
+from otobo_znuny_python_client import (
+    OTOBOClient,
+    OTOBOClientConfig,
+    AuthData,
+    TicketCreateParams,
+    TicketCommon,
     ArticleDetail,
-
-TicketOperation
+    TicketOperation,
+)
 
 config = OTOBOClientConfig(
     base_url="https://your-otobo-server/nph-genericinterface.pl",
