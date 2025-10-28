@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Iterable, Literal
 
 import typer
 import yaml
@@ -16,11 +16,9 @@ class NoAliasDumper(yaml.SafeDumper):
         return True
 
 
-app = typer.Typer(
-    add_completion=False,
-    help="Generate secure OTOBO/Znuny web service YAML.",
-    context_settings={"help_option_names": ["-h", "--help"]},
-)
+DEFAULT_FRAMEWORK_VERSION = "11.0.0"
+DEFAULT_BASIC_AUTH_USER = "webservice"
+DEFAULT_BASIC_AUTH_PASSWORD = "secure_password_123"
 
 
 class RouteMappingConfig(BaseModel):
@@ -43,23 +41,112 @@ class OperationSpec(BaseModel):
     description: str
     methods: list[str]
     include_ticket_data: Literal["0", "1"]
+    inbound_template: str
+
+
+SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
+    TicketOperation.GET: OperationSpec(
+        op=TicketOperation.GET,
+        route="/tickets/:TicketID",
+        description="Get ticket details by ID.",
+        methods=["GET"],
+        include_ticket_data="1",
+        inbound_template='{\n  "TicketID": "<OTOBO_TicketID>"\n}',
+    ),
+    TicketOperation.SEARCH: OperationSpec(
+        op=TicketOperation.SEARCH,
+        route="/tickets/search",
+        description="Search for tickets using the request payload as criteria.",
+        methods=["POST"],
+        include_ticket_data="1",
+        inbound_template='{\n  "Title": "<OTOBO_Title>",\n  "Queue": "<OTOBO_Queue>",\n  "State": "<OTOBO_State>",\n  "Priority": "<OTOBO_Priority>",\n  "CustomerUserLogin": "<OTOBO_CustomerUserLogin>"\n}',
+    ),
+    TicketOperation.CREATE: OperationSpec(
+        op=TicketOperation.CREATE,
+        route="/tickets",
+        description="Create a new ticket from the supplied Ticket and Article data.",
+        methods=["POST"],
+        include_ticket_data="1",
+        inbound_template='{\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>",\n    "CustomerUser": "<OTOBO_Ticket_CustomerUser>"\n  },\n  "Article": {\n    "Subject": "<OTOBO_Article_Subject>",\n    "Body": "<OTOBO_Article_Body>",\n    "ContentType": "text/plain; charset=utf8",\n    "CommunicationChannel": "Internal",\n    "SenderType": "agent"\n  }\n}',
+    ),
+    TicketOperation.UPDATE: OperationSpec(
+        op=TicketOperation.UPDATE,
+        route="/tickets/:TicketID",
+        description="Update an existing ticket identified by the path parameter.",
+        methods=["PUT", "PATCH"],
+        include_ticket_data="1",
+        inbound_template='{\n  "TicketID": "<OTOBO_TicketID>",\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>"\n  }\n}',
+    ),
+}
+
+
+def _build_operations_doc(specs: Iterable[OperationSpec]) -> str:
+    lines = ["Supported operations and routes:"]
+    for spec in specs:
+        methods = ", ".join(spec.methods)
+        lines.append(
+            f"- {spec.op.name.lower()}: {spec.description}"
+            f" (Route: {spec.route}, Methods: {methods})"
+        )
+    return "\n".join(lines)
+
+
+SUPPORTED_OPERATIONS_DOC = _build_operations_doc(SUPPORTED_OPERATION_SPECS.values())
+
+AUTH_EXPECTATIONS_DOC = (
+    "Authentication: HTTP Basic authentication is configured for the provider transport.\n"
+    f"The generated YAML defaults to user '{DEFAULT_BASIC_AUTH_USER}'. Provide the desired"
+    " password when calling the generator to align with your deployment policies."
+)
 
 
 class WebServiceGenerator:
-    def __init__(self, name: str, description: str, password: str):
+    """Build YAML snippets for OTOBO/Znuny ticket web services."""
+
+    def __init__(
+            self,
+            name: str,
+            description: str,
+            *,
+            framework_version: str = DEFAULT_FRAMEWORK_VERSION,
+            basic_auth_user: str = DEFAULT_BASIC_AUTH_USER,
+            basic_auth_password: str | None = DEFAULT_BASIC_AUTH_PASSWORD,
+            operation_specs: dict[TicketOperation, OperationSpec] | None = None,
+    ) -> None:
         self.name = name
         self.description = description
-        self.password = password
+        self.framework_version = framework_version
+        self.basic_auth_user = basic_auth_user
+        self.basic_auth_password = basic_auth_password or ""
+        self.operation_specs = operation_specs or SUPPORTED_OPERATION_SPECS
 
-    def generate_webservice_config(self, operations: list[OperationSpec]) -> dict[str, Any]:
-        """Generate a complete web service configuration."""
+    @staticmethod
+    def build_description(
+            name: str,
+            restricted_user: str | None = None,
+            allow_all_agents: bool = True,
+    ) -> str:
+        if restricted_user:
+            return (
+                f"Webservice '{name}' secured for the dedicated agent '{restricted_user}'."
+            )
+        if allow_all_agents:
+            return (
+                f"Webservice '{name}' for Python client integrations. Accessible to"
+                " authenticated agents with the required permissions."
+            )
+        return f"Webservice '{name}' for Python client integrations."
+
+    def build_config(self, operations: Iterable[TicketOperation]) -> dict[str, Any]:
+        """Generate a complete web service configuration for the selected operations."""
+
         config = {
             "Debugger": {
                 "DebugThreshold": "debug",
                 "TestMode": "0",
             },
             "Description": self.description,
-            "FrameworkVersion": "10.1.x git",
+            "FrameworkVersion": self.framework_version,
             "Provider": {
                 "Operation": {},
                 "Transport": {
@@ -67,8 +154,8 @@ class WebServiceGenerator:
                         "AdditionalHeaders": None,
                         "Authentication": {
                             "AuthType": "BasicAuth",
-                            "BasicAuthPassword": self.password,
-                            "BasicAuthUser": "webservice",
+                            "BasicAuthPassword": self.basic_auth_password,
+                            "BasicAuthUser": self.basic_auth_user,
                         },
                         "InboundLogging": "1",
                         "MaxLength": "100000000",
@@ -86,137 +173,122 @@ class WebServiceGenerator:
             },
         }
 
-        # Add operations
-        for op_spec in operations:
-            operation_config = self._create_operation_config(op_spec)
-            config["Provider"]["Operation"][op_spec.op.value] = operation_config
+        route_mapping = config["Provider"]["Transport"]["Config"]["RouteOperationMapping"]
+        operations_map = config["Provider"]["Operation"]
 
-            # Add route mapping
-            route_config = RouteMappingConfig(
-                Route=op_spec.route,
-                RequestMethod=op_spec.methods,
-            )
-            config["Provider"]["Transport"]["Config"]["RouteOperationMapping"][
-                op_spec.route] = route_config.model_dump()
+        for operation in operations:
+            spec = self.operation_specs.get(operation)
+            if spec is None:
+                continue
+
+            operations_map[spec.op.value] = self._create_operation_config(spec)
+            route_mapping[spec.route] = RouteMappingConfig(
+                Route=spec.route,
+                RequestMethod=spec.methods,
+            ).model_dump()
 
         return config
 
     def _create_operation_config(self, op_spec: OperationSpec) -> dict[str, Any]:
-        """Create operation configuration for a specific operation."""
-        base_config = {
-            "Type": f"Ticket::{op_spec.op.value}",
-            "Description": op_spec.description,
-            "IncludeTicketData": op_spec.include_ticket_data,
-            "MappingInbound": {},
-            "MappingOutbound": {},
-        }
+        return ProviderOperationConfig(
+            Type=f"Ticket::{op_spec.op.value}",
+            Description=op_spec.description,
+            IncludeTicketData=op_spec.include_ticket_data,
+            MappingInbound={
+                "Type": "Simple",
+                "Config": {
+                    "Template": op_spec.inbound_template,
+                },
+            },
+            MappingOutbound={
+                "Type": "Simple",
+                "Config": {},
+            },
+        ).model_dump()
 
-        # Add operation-specific mappings
-        if op_spec.op == TicketOperation.CREATE:
-            base_config["MappingInbound"] = {
-                "Config": {
-                    "Template": '{\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>",\n    "CustomerUser": "<OTOBO_Ticket_CustomerUser>"\n  },\n  "Article": {\n    "Subject": "<OTOBO_Article_Subject>",\n    "Body": "<OTOBO_Article_Body>",\n    "ContentType": "text/plain; charset=utf8",\n    "CommunicationChannel": "Internal",\n    "SenderType": "agent"\n  }\n}',
-                },
-                "Type": "Simple",
-            }
-        elif op_spec.op == TicketOperation.GET:
-            base_config["MappingInbound"] = {
-                "Config": {
-                    "Template": '{\n  "TicketID": "<OTOBO_TicketID>"\n}',
-                },
-                "Type": "Simple",
-            }
-        elif op_spec.op == TicketOperation.SEARCH:
-            base_config["MappingInbound"] = {
-                "Config": {
-                    "Template": '{\n  "Title": "<OTOBO_Title>",\n  "Queue": "<OTOBO_Queue>",\n  "State": "<OTOBO_State>",\n  "Priority": "<OTOBO_Priority>",\n  "CustomerUserLogin": "<OTOBO_CustomerUserLogin>"\n}',
-                },
-                "Type": "Simple",
-            }
-        elif op_spec.op == TicketOperation.UPDATE:
-            base_config["MappingInbound"] = {
-                "Config": {
-                    "Template": '{\n  "TicketID": "<OTOBO_TicketID>",\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>"\n  }\n}',
-                },
-                "Type": "Simple",
-            }
+    def dump_yaml(self, config: dict[str, Any]) -> str:
+        """Serialize a web service configuration into YAML."""
 
-        return base_config
+        return yaml.dump(
+            config,
+            Dumper=NoAliasDumper,
+            default_flow_style=False,
+            allow_unicode=True,
+            sort_keys=False,
+            indent=2,
+        )
 
     def save_to_file(self, config: dict[str, Any], output_path: Path) -> None:
-        """Save the web service configuration to a YAML file."""
+        """Persist a YAML configuration to disk."""
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            yaml.dump(config, f, Dumper=NoAliasDumper, default_flow_style=False,
-                      allow_unicode=True, sort_keys=False, indent=2)
+        output_path.write_text(self.dump_yaml(config), encoding="utf-8")
 
 
-@app.command()
+CLI_DESCRIPTION = "\n\n".join([
+    "Generate secure OTOBO/Znuny web service YAML.",
+    SUPPORTED_OPERATIONS_DOC,
+    AUTH_EXPECTATIONS_DOC,
+])
+
+
+app = typer.Typer(
+    add_completion=False,
+    help=CLI_DESCRIPTION,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+
+
+@app.command(help="\n\n".join([SUPPORTED_OPERATIONS_DOC, AUTH_EXPECTATIONS_DOC]))
 def generate(
-        name: Annotated[str, typer.Option(help="Name of the web service")] = "PythonClientWebService",
+        name: Annotated[
+            str,
+            typer.Option(help="Name of the web service"),
+        ] = "PythonClientWebService",
         description: Annotated[
-            str, typer.Option(help="Description of the web service")] = "Web service for Python client integration",
-        password: Annotated[str, typer.Option(help="Password for BasicAuth authentication")] = "secure_password_123",
+            str,
+            typer.Option(help="Description of the web service"),
+        ] = "Web service for Python client integration",
+        password: Annotated[
+            str,
+            typer.Option(help="Password for BasicAuth authentication"),
+        ] = DEFAULT_BASIC_AUTH_PASSWORD,
+        basic_auth_user: Annotated[
+            str,
+            typer.Option(help="Username for BasicAuth authentication"),
+        ] = DEFAULT_BASIC_AUTH_USER,
+        framework_version: Annotated[
+            str,
+            typer.Option(help="Framework version for the generated YAML"),
+        ] = DEFAULT_FRAMEWORK_VERSION,
         operations: Annotated[
-            list[str] | None, typer.Option(help="Enabled operations (get, search, create, update)")] = None,
-        output: Annotated[Path, typer.Option(help="Output file path")] = Path("webservice_config.yml"),
+            list[str] | None,
+            typer.Option(
+                help="Enabled operations (repeat for multiple)",
+                show_default="all",
+            ),
+        ] = None,
+        output: Annotated[
+            Path,
+            typer.Option(help="Output file path"),
+        ] = Path("webservice_config.yml"),
 ) -> None:
     """Generate OTOBO/Znuny web service configuration."""
 
-    # Validate and convert operations
-    if operations is None:
-        operations = ["get", "search", "create", "update"]
-    enabled_ops = generate_enabled_operations_list(operations)
+    selected_operations = operations or [op.name.lower() for op in SUPPORTED_OPERATION_SPECS]
+    enabled_ops = generate_enabled_operations_list(selected_operations)
     if not enabled_ops:
         typer.echo("Error: No valid operations specified", err=True)
         raise typer.Exit(1)
 
-    # Create operation specifications
-    operation_specs = []
-    for op in enabled_ops:
-        if op == TicketOperation.GET:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Get ticket by ID",
-                methods=["GET"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.SEARCH:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/search",
-                description="Search for tickets",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.CREATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets",
-                description="Create a new ticket",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.UPDATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Update an existing ticket",
-                methods=["PUT", "PATCH"],
-                include_ticket_data="1",
-            )
-        else:
-            continue
-
-        operation_specs.append(spec)
-
-    # Generate configuration
-    generator = WebServiceGenerator(name, description, password)
-    config = generator.generate_webservice_config(operation_specs)
-
-    # Save to file
+    generator = WebServiceGenerator(
+        name=name,
+        description=description,
+        framework_version=framework_version,
+        basic_auth_user=basic_auth_user,
+        basic_auth_password=password,
+    )
+    config = generator.build_config(enabled_ops)
     generator.save_to_file(config, output)
 
     typer.echo(f"Web service configuration generated: {output}")
