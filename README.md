@@ -17,7 +17,7 @@ uv run --group docs mkdocs serve
 The published sections include:
 
 - [Getting started (English)](docs/getting-started.en.md)
-- [Einstieg (Deutsch)](docs/getting-started.de.md)
+- [Library overview](docs/library-overview.md)
 
 ## Features
 
