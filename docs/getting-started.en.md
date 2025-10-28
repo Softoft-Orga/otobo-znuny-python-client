@@ -6,19 +6,19 @@ package and create a ticket.
 ## Installation
 
 ```bash
-pip install otobo_znuny_python_client
+pip install otobo
 ```
 
 ## Configuration
 
 ```python
 from otobo_znuny_python_client import (
-    ArticleDetail,
-    AuthData,
     OTOBOClient,
     OTOBOClientConfig,
-    TicketCommon,
+    AuthData,
     TicketCreateParams,
+    TicketCommon,
+    ArticleDetail,
     TicketOperation,
 )
 
