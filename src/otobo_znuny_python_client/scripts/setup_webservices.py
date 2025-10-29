@@ -7,19 +7,21 @@ from typing import Annotated
 import typer
 
 from otobo_znuny_python_client.setup.webservices import (
-    AUTH_EXPECTATIONS_DOC,
-    DEFAULT_BASIC_AUTH_PASSWORD,
-    DEFAULT_BASIC_AUTH_USER,
     DEFAULT_FRAMEWORK_VERSION,
-    WebServiceGenerator,
+    WebserviceBuilder,
     generate_enabled_operations_list,
 )
-from setup.webservices import SUPPORTED_OPERATIONS_DOC
+from otobo_znuny_python_client.setup.webservices.operations import SUPPORTED_OPERATIONS_DOC
+
+RESTRICTION_DOC = (
+    "Use --restrict-user to bind the webservice to a dedicated agent account. "
+    "Omit the option to allow any authenticated agent."
+)
 
 CLI_DESCRIPTION = "\n\n".join([
-    "Generate secure OTOBO/Znuny web service YAML.",
+    "Generate OTOBO/Znuny webservice YAML.",
     SUPPORTED_OPERATIONS_DOC,
-    AUTH_EXPECTATIONS_DOC,
+    RESTRICTION_DOC,
 ])
 
 app = typer.Typer(
@@ -39,7 +41,7 @@ def _validate_name(name: str) -> str:
     return name
 
 
-@app.command(help="\n\n".join([SUPPORTED_OPERATIONS_DOC, AUTH_EXPECTATIONS_DOC]))
+@app.command(help="\n\n".join([SUPPORTED_OPERATIONS_DOC, RESTRICTION_DOC]))
 def generate(
         name: Annotated[str, typer.Option("--name", rich_help_panel="Required")],
         enabled_operations_raw: Annotated[
@@ -52,31 +54,15 @@ def generate(
                 rich_help_panel="Operations",
             ),
         ],
-        allow_user: Annotated[
+        restrict_user: Annotated[
             str | None,
             typer.Option(
-                "--allow-user",
+                "--restrict-user",
                 metavar="USERNAME",
-                rich_help_panel="Auth",
-                help="Limit access to a dedicated agent user (sets BasicAuth user).",
+                rich_help_panel="Access",
+                help="Restrict the webservice to a dedicated agent login.",
             ),
         ] = None,
-        allow_all_agents: Annotated[
-            bool,
-            typer.Option(
-                "--allow-all-agents",
-                rich_help_panel="Auth",
-                help="Allow any authenticated agent (uses shared BasicAuth user).",
-            ),
-        ] = False,
-        password: Annotated[
-            str,
-            typer.Option(
-                "--password",
-                rich_help_panel="Auth",
-                help="Password assigned to the BasicAuth user.",
-            ),
-        ] = DEFAULT_BASIC_AUTH_PASSWORD,
         version: Annotated[
             str,
             typer.Option("--version", rich_help_panel="Optional"),
@@ -92,47 +78,32 @@ def generate(
         typer.secho(f"Error: {exc}", fg=typer.colors.RED)
         raise typer.Exit(code=1) from exc
 
-    if not (allow_user or allow_all_agents):
-        typer.secho(
-            "Error: You must specify an authentication mode.", fg=typer.colors.RED,
-        )
-        raise typer.Exit(code=1)
-    if allow_user and allow_all_agents:
-        typer.secho(
-            "Error: --allow-user and --allow-all-agents are mutually exclusive.",
-            fg=typer.colors.RED,
-        )
-        raise typer.Exit(code=1)
-
     enabled_operations = generate_enabled_operations_list(enabled_operations_raw)
     if not enabled_operations:
         typer.secho("Error: No valid operations specified.", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 
-    description = WebServiceGenerator.build_description(
-        name=validated_name,
-        restricted_user=allow_user,
-        allow_all_agents=allow_all_agents,
-    )
-    generator = WebServiceGenerator(
-        name=validated_name,
-        description=description,
-        framework_version=version,
-        basic_auth_user=allow_user or DEFAULT_BASIC_AUTH_USER,
-        basic_auth_password=password,
-    )
+    builder = WebserviceBuilder(name=validated_name, framework_version=version)
+    if restrict_user:
+        builder.set_restricted_by(restrict_user)
+    for operation in enabled_operations:
+        builder.enable_operation(operation)
 
-    config = generator.build_config(enabled_operations)
+    try:
+        config = builder.build()
+    except ValueError as exc:  # pragma: no cover - defensive
+        typer.secho(f"Error: {exc}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
     if file:
-        generator.save_to_file(config, file)
+        builder.save_to_file(config, file)
         typer.secho(
             "Successfully generated webservice configuration.", fg=typer.colors.GREEN,
         )
         typer.secho(f"File: {file}")
     else:
         typer.secho("--- Generated YAML ---", bold=True)
-        typer.echo(generator.dump_yaml(config))
+        typer.echo(builder.dump_yaml(config))
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from otobo_znuny_python_client.cli.interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.webservices.generator import WebServiceGenerator
+from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
 
 PermissionMap = {
     "owner": "owner",
@@ -216,49 +216,9 @@ def setup_otobo_system(
         config.webservice_password,
     )
 
-    # Create operation specs
-    from setup.webservices.webservice_models import OperationSpec
-    operation_specs = []
-    for op in config.enabled_operations:
-        if op == TicketOperation.GET:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Get ticket by ID",
-                methods=["GET"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.SEARCH:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/search",
-                description="Search for tickets",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.CREATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets",
-                description="Create a new ticket",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.UPDATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Update an existing ticket",
-                methods=["PUT", "PATCH"],
-                include_ticket_data="1",
-            )
-        else:
-            continue
-        operation_specs.append(spec)
-
-    webservice_config = generator.generate_webservice_config(operation_specs)
+    webservice_config = builder.build()
     webservice_file = env.webservices_dir / f"{config.webservice_name}.yml"
-    generator.save_to_file(webservice_config, webservice_file)
+    builder.save_to_file(webservice_config, webservice_file)
 
     # Install web service
     echo(f"Installing web service from: {webservice_file}")
