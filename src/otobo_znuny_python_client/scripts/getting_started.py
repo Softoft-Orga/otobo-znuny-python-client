@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from otobo_znuny_python_client.cli.interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.scripts.setup_webservices import WebServiceGenerator
+from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
 
 app = typer.Typer()
 
@@ -242,6 +242,7 @@ class GettingStarted:
                      default=f"http://localhost/{self.system_environment.ticket_system_name}/"
                              f"nph-genericinterface.pl")
         ws_name = typer.prompt("Webservice name", default="OpenTicketAI")
+        self.config.webservice_name = ws_name
 
         queue_name = typer.prompt("Incoming tickets queue", default="Incoming Tickets")
         group_name = typer.prompt("Queue group (create if missing)", default="users")
@@ -259,12 +260,14 @@ class GettingStarted:
         for op, d in ops_choices:
             if typer.confirm(f"Enable {op}?", default=d):
                 ops.append(op)
-        WebServiceGenerator().write_yaml_to_file(
-            restricted_user=self.config.username,
-            webservice_name=self.config.webservice_name,
-            enabled_operations=ops,
-            file_path=self.system_environment.webservices_dir / f"{ws_name}.yml",
-        )
+        builder = WebserviceBuilder(name=ws_name)
+        builder.set_restricted_by(self.config.username)
+        for operation in ops:
+            builder.enable_operation(operation)
+        config = builder.build()
+        ws_file = self.system_environment.webservices_dir / f"{ws_name}.yml"
+        builder.save_to_file(config, ws_file)
+        self.config.ws_file = ws_file
         cfg_yaml = Path("config.yaml")
         cfg_yaml.write_text(self.config.model_dump())
 
