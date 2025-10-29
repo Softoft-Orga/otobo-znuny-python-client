@@ -210,12 +210,11 @@ def setup_otobo_system(
 
     # Generate and install web service
     echo(f"Generating web service: {config.webservice_name}")
-    generator = WebServiceGenerator(
-        config.webservice_name,
-        config.webservice_description,
-        config.webservice_password,
-    )
-
+    
+    builder = WebserviceBuilder(name=config.webservice_name)
+    builder.enable_operations(*config.enabled_operations)
+    builder.set_restricted_by(config.user_name)
+    
     webservice_config = builder.build()
     webservice_file = env.webservices_dir / f"{config.webservice_name}.yml"
     builder.save_to_file(webservice_config, webservice_file)

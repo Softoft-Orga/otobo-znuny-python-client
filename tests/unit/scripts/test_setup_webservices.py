@@ -8,8 +8,6 @@ from types import ModuleType
 import pytest
 from typer.testing import CliRunner
 
-from otobo_znuny_python_client.setup.webservices import generator as sw
-
 scripts_pkg = sys.modules.get("scripts")
 if scripts_pkg is None:
     scripts_pkg = ModuleType("scripts")

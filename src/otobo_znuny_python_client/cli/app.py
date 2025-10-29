@@ -5,7 +5,6 @@ from typing import Iterable, List, Optional
 import typer
 
 from otobo_znuny_python_client.cli.interface import OtoboConsole, Permission
-from otobo_znuny_python_client.cli.webservice_factory import create_webservice
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
 from otobo_znuny_python_client.setup.bootstrap import (
     DockerEnvironment,
@@ -16,9 +15,7 @@ from otobo_znuny_python_client.setup.bootstrap import (
     setup_otobo_system,
 )
 
-
 app = typer.Typer(help="Command line utilities for interacting with OTOBO/Znuny systems.")
-
 
 _ENV_CACHE: SystemEnvironment | DockerEnvironment | None = None
 
@@ -92,7 +89,8 @@ def add_group(
 def link_user_to_group(
         user_name: str = typer.Argument(..., help="Existing user name."),
         group_name: str = typer.Argument(..., help="Existing group name."),
-        permission: Permission | str = typer.Option("rw", "--permission", "-p", help="Permission to grant to the user for the group."),
+        permission: Permission | str = typer.Option("rw", "--permission", "-p",
+                                                    help="Permission to grant to the user for the group."),
 ) -> None:
     console = _build_console()
     result = console.link_user_to_group(user_name, group_name, permission)
@@ -107,7 +105,8 @@ def add_queue(
         system_address_id: Optional[int] = typer.Option(None, "--system-address-id", help="System address identifier."),
         system_address_name: Optional[str] = typer.Option(None, "--system-address-name", help="System address name."),
         unlock_timeout: Optional[int] = typer.Option(None, "--unlock-timeout", help="Unlock timeout in minutes."),
-        first_response_time: Optional[int] = typer.Option(None, "--first-response-time", help="First response time in minutes."),
+        first_response_time: Optional[int] = typer.Option(None, "--first-response-time",
+                                                          help="First response time in minutes."),
         update_time: Optional[int] = typer.Option(None, "--update-time", help="Update time in minutes."),
         solution_time: Optional[int] = typer.Option(None, "--solution-time", help="Solution time in minutes."),
         calendar: Optional[int] = typer.Option(None, "--calendar", help="Calendar identifier."),
@@ -126,17 +125,6 @@ def add_queue(
         calendar=calendar,
     )
     _handle_result(result, f"Queue '{name}' created successfully.")
-
-
-@app.command("setup-webservice")
-def setup_webservice(
-        webservice_name: str = typer.Argument(..., help="Name of the webservice."),
-        enabled_operations: Optional[List[str]] = typer.Option(None, "--operation", "-o", help="Enabled ticket operations (e.g. GET, CREATE)."),
-        restriction_by_user: Optional[str] = typer.Option(None, "--restriction-by-user", help="Optional username to restrict the webservice to."),
-) -> None:
-    operations = _resolve_operations(enabled_operations or [])
-    create_webservice(webservice_name, operations, restriction_by_user)
-    typer.echo(f"Webservice '{webservice_name}' prepared with operations {[op.name for op in operations]}.")
 
 
 def _prompt_operations(default: Iterable[TicketOperation]) -> list[TicketOperation]:
@@ -170,7 +158,8 @@ def interactive_setup() -> None:
     user_first_name = typer.prompt("User first name", default="Python")
     user_last_name = typer.prompt("User last name", default="Client")
     user_email = typer.prompt("User email", default="python-client@example.com")
-    user_password = typer.prompt("User password", default=generate_random_password(), hide_input=True, confirmation_prompt=True)
+    user_password = typer.prompt("User password", default=generate_random_password(), hide_input=True,
+                                 confirmation_prompt=True)
     user_permissions = _prompt_permissions(["rw"])
 
     queue_name = typer.prompt("Queue name", default="Python Client Queue")
@@ -178,7 +167,8 @@ def interactive_setup() -> None:
 
     webservice_name = typer.prompt("Webservice name", default="PythonClientWebService")
     webservice_description = typer.prompt("Webservice description", default="Web service for Python client integration")
-    webservice_password = typer.prompt("Webservice password", default=generate_random_password(), hide_input=True, confirmation_prompt=True)
+    webservice_password = typer.prompt("Webservice password", default=generate_random_password(), hide_input=True,
+                                       confirmation_prompt=True)
     enabled_operations = _prompt_operations(
         [TicketOperation.GET, TicketOperation.SEARCH, TicketOperation.CREATE, TicketOperation.UPDATE]
     )

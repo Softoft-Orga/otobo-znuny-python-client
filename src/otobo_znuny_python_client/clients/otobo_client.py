@@ -10,7 +10,6 @@ from urllib.parse import quote
 from httpx import AsyncClient
 from pydantic import BaseModel
 
-from models.request_models import WsTicketGetRequest
 from otobo_znuny_python_client.domain_models.basic_auth_model import BasicAuth
 from otobo_znuny_python_client.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny_python_client.domain_models.ticket_models import Ticket, TicketCreate, TicketSearch, TicketUpdate
@@ -22,6 +21,7 @@ from otobo_znuny_python_client.mappers import (
     to_ws_ticket_search,
     to_ws_ticket_update,
 )
+from otobo_znuny_python_client.models.request_models import WsTicketGetRequest
 from otobo_znuny_python_client.models.request_models import (
     WsTicketMutationRequest,
 )
