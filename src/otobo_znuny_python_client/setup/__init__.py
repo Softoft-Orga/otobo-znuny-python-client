@@ -3,6 +3,6 @@
 from __future__ import annotations
 
 from otobo_znuny_python_client.setup.bootstrap import SystemEnvironment, set_env_var
-from otobo_znuny_python_client.setup.webservices import WebServiceGenerator
+from otobo_znuny_python_client.setup.webservices import WebserviceBuilder
 
-__all__ = ["SystemEnvironment", "WebServiceGenerator", "set_env_var"]
+__all__ = ["SystemEnvironment", "WebserviceBuilder", "set_env_var"]

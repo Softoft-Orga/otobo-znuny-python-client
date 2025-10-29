@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from otobo_znuny_python_client.cli.interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.webservices.generator import WebServiceGenerator
+from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
 
 app = typer.Typer()
 
@@ -134,55 +134,14 @@ def setup_otobo_system(env: SystemEnvironment | DockerEnvironment, config: Setup
 
     # Generate and install web service
     typer.echo(f"Generating web service: {config.webservice_name}")
-    generator = WebServiceGenerator(
-        config.webservice_name,
-        config.webservice_description,
-        config.webservice_password,
-    )
+    builder = WebserviceBuilder(name=config.webservice_name)
+    builder.set_restricted_by(config.user_name)
+    for operation in config.enabled_operations:
+        builder.enable_operation(operation)
 
-    # Create operation specs
-    from setup.webservices.webservice_models import OperationSpec
-    operation_specs = []
-    for op in config.enabled_operations:
-        if op == TicketOperation.GET:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Get ticket by ID",
-                methods=["GET"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.SEARCH:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/search",
-                description="Search for tickets",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.CREATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets",
-                description="Create a new ticket",
-                methods=["POST"],
-                include_ticket_data="1",
-            )
-        elif op == TicketOperation.UPDATE:
-            spec = OperationSpec(
-                op=op,
-                route="/tickets/:TicketID",
-                description="Update an existing ticket",
-                methods=["PUT", "PATCH"],
-                include_ticket_data="1",
-            )
-        else:
-            continue
-        operation_specs.append(spec)
-
-    webservice_config = generator.generate_webservice_config(operation_specs)
+    webservice_config = builder.build()
     webservice_file = env.webservices_dir / f"{config.webservice_name}.yml"
-    generator.save_to_file(webservice_config, webservice_file)
+    builder.save_to_file(webservice_config, webservice_file)
 
     # Install web service
     typer.echo(f"Installing web service from: {webservice_file}")
@@ -204,8 +163,7 @@ def setup_otobo_system(env: SystemEnvironment | DockerEnvironment, config: Setup
 
     typer.echo("\n📋 Client Configuration:")
     typer.echo(f"Base URL: {base_url}/{config.webservice_name}")
-    typer.echo("Username: webservice")
-    typer.echo(f"Password: {config.webservice_password}")
+    typer.echo(f"Restricted user: {config.user_name}")
     typer.echo(f"Operations: {[op.value for op in config.enabled_operations]}")
 
 
