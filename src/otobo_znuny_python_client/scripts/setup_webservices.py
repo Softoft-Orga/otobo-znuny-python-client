@@ -11,10 +11,10 @@ from otobo_znuny_python_client.setup.webservices import (
     DEFAULT_BASIC_AUTH_PASSWORD,
     DEFAULT_BASIC_AUTH_USER,
     DEFAULT_FRAMEWORK_VERSION,
-    SUPPORTED_OPERATIONS_DOC,
     WebServiceGenerator,
     generate_enabled_operations_list,
 )
+from setup.webservices import SUPPORTED_OPERATIONS_DOC
 
 CLI_DESCRIPTION = "\n\n".join([
     "Generate secure OTOBO/Znuny web service YAML.",

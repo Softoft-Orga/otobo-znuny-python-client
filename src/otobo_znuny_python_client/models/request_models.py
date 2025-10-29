@@ -51,14 +51,13 @@ class WsTicketSearchRequest(BaseModel):
 
 
 class WsTicketGetRequest(BaseModel):
-    TicketID: int | None = None
     DynamicFields: BooleanInteger = 1
     Extended: BooleanInteger = 1
     AllArticles: BooleanInteger = 1
     ArticleSenderType: list[str] | None = None
     ArticleOrder: Literal["ASC", "DESC"] = "ASC"
     ArticleLimit: int = 5
-    Attachments: BooleanInteger = 0
+    Attachments: BooleanInteger = 1
     GetAttachmentContents: BooleanInteger = 1
     HTMLBodyAsAttachment: BooleanInteger = 1
 

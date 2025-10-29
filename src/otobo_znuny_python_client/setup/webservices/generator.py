@@ -1,123 +1,30 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Any, Iterable, Literal
+from typing import Annotated, Any, Iterable
 
 import typer
 import yaml
-from pydantic import BaseModel
 
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
 from otobo_znuny_python_client.setup.webservices.utils import generate_enabled_operations_list
-
-
-class NoAliasDumper(yaml.SafeDumper):
-    def ignore_aliases(self, data):
-        return True
-
+from setup.webservices import SUPPORTED_OPERATION_SPECS, SUPPORTED_OPERATIONS_DOC
+from setup.webservices.webservice_models import NoAliasDumper, RouteMappingConfig, ProviderOperationConfig, \
+    OperationSpec
 
 DEFAULT_FRAMEWORK_VERSION = "11.0.0"
 DEFAULT_BASIC_AUTH_USER = "webservice"
-DEFAULT_BASIC_AUTH_PASSWORD = "secure_password_123"
-
-
-class RouteMappingConfig(BaseModel):
-    Route: str
-    RequestMethod: list[str]
-    ParserBackend: Literal["JSON"] = "JSON"
-
-
-class ProviderOperationConfig(BaseModel):
-    Type: str
-    Description: str
-    IncludeTicketData: Literal["0", "1"]
-    MappingInbound: dict[str, Any]
-    MappingOutbound: dict[str, Any]
-
-
-class OperationSpec(BaseModel):
-    op: TicketOperation
-    route: str
-    description: str
-    methods: list[str]
-    include_ticket_data: Literal["0", "1"]
-    inbound_template: str
-
-
-SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
-    TicketOperation.GET: OperationSpec(
-        op=TicketOperation.GET,
-        route="/tickets/:TicketID",
-        description="Get ticket details by ID.",
-        methods=["GET"],
-        include_ticket_data="1",
-        inbound_template='{\n  "TicketID": "<OTOBO_TicketID>"\n}',
-    ),
-    TicketOperation.SEARCH: OperationSpec(
-        op=TicketOperation.SEARCH,
-        route="/tickets/search",
-        description="Search for tickets using the request payload as criteria.",
-        methods=["POST"],
-        include_ticket_data="1",
-        inbound_template='{\n  "Title": "<OTOBO_Title>",\n  "Queue": "<OTOBO_Queue>",\n  "State": "<OTOBO_State>",\n  "Priority": "<OTOBO_Priority>",\n  "CustomerUserLogin": "<OTOBO_CustomerUserLogin>"\n}',
-    ),
-    TicketOperation.CREATE: OperationSpec(
-        op=TicketOperation.CREATE,
-        route="/tickets",
-        description="Create a new ticket from the supplied Ticket and Article data.",
-        methods=["POST"],
-        include_ticket_data="1",
-        inbound_template='{\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>",\n    "CustomerUser": "<OTOBO_Ticket_CustomerUser>"\n  },\n  "Article": {\n    "Subject": "<OTOBO_Article_Subject>",\n    "Body": "<OTOBO_Article_Body>",\n    "ContentType": "text/plain; charset=utf8",\n    "CommunicationChannel": "Internal",\n    "SenderType": "agent"\n  }\n}',
-    ),
-    TicketOperation.UPDATE: OperationSpec(
-        op=TicketOperation.UPDATE,
-        route="/tickets/:TicketID",
-        description="Update an existing ticket identified by the path parameter.",
-        methods=["PUT", "PATCH"],
-        include_ticket_data="1",
-        inbound_template='{\n  "TicketID": "<OTOBO_TicketID>",\n  "Ticket": {\n    "Title": "<OTOBO_Ticket_Title>",\n    "Queue": "<OTOBO_Ticket_Queue>",\n    "State": "<OTOBO_Ticket_State>",\n    "Priority": "<OTOBO_Ticket_Priority>"\n  }\n}',
-    ),
-}
-
-
-def _build_operations_doc(specs: Iterable[OperationSpec]) -> str:
-    lines = ["Supported operations and routes:"]
-    for spec in specs:
-        methods = ", ".join(spec.methods)
-        lines.append(
-            f"- {spec.op.name.lower()}: {spec.description}"
-            f" (Route: {spec.route}, Methods: {methods})"
-        )
-    return "\n".join(lines)
-
-
-SUPPORTED_OPERATIONS_DOC = _build_operations_doc(SUPPORTED_OPERATION_SPECS.values())
-
-AUTH_EXPECTATIONS_DOC = (
-    "Authentication: HTTP Basic authentication is configured for the provider transport.\n"
-    f"The generated YAML defaults to user '{DEFAULT_BASIC_AUTH_USER}'. Provide the desired"
-    " password when calling the generator to align with your deployment policies."
-)
 
 
 class WebServiceGenerator:
     """Build YAML snippets for OTOBO/Znuny ticket web services."""
 
-    def __init__(
-            self,
-            name: str,
-            description: str,
-            *,
-            framework_version: str = DEFAULT_FRAMEWORK_VERSION,
-            basic_auth_user: str = DEFAULT_BASIC_AUTH_USER,
-            basic_auth_password: str | None = DEFAULT_BASIC_AUTH_PASSWORD,
-            operation_specs: dict[TicketOperation, OperationSpec] | None = None,
-    ) -> None:
-        self.name = name
-        self.description = description
-        self.framework_version = framework_version
-        self.basic_auth_user = basic_auth_user
-        self.basic_auth_password = basic_auth_password or ""
+    def __init__(self) -> None:
+        self.name = ""
+        self.description = ""
+        self.framework_version = DEFAULT_FRAMEWORK_VERSION
+        self.basic_auth_user = DEFAULT_BASIC_AUTH_USER
+        self.basic_auth_password = ""
         self.operation_specs = operation_specs or SUPPORTED_OPERATION_SPECS
 
     @staticmethod
@@ -139,8 +46,7 @@ class WebServiceGenerator:
 
     def build_config(self, operations: Iterable[TicketOperation]) -> dict[str, Any]:
         """Generate a complete web service configuration for the selected operations."""
-
-        config = {
+        config: dict[str, dict[str, dict[str, dict[str, Any] | str] | str] | str] = {
             "Debugger": {
                 "DebugThreshold": "debug",
                 "TestMode": "0",
@@ -151,12 +57,7 @@ class WebServiceGenerator:
                 "Operation": {},
                 "Transport": {
                     "Config": {
-                        "AdditionalHeaders": None,
-                        "Authentication": {
-                            "AuthType": "BasicAuth",
-                            "BasicAuthPassword": self.basic_auth_password,
-                            "BasicAuthUser": self.basic_auth_user,
-                        },
+                        "AdditionalHeaders": "",
                         "InboundLogging": "1",
                         "MaxLength": "100000000",
                         "OutboundLogging": "1",
@@ -173,8 +74,8 @@ class WebServiceGenerator:
             },
         }
 
-        route_mapping = config["Provider"]["Transport"]["Config"]["RouteOperationMapping"]
-        operations_map = config["Provider"]["Operation"]
+        route_mapping: dict = config["Provider"]["Transport"]["Config"]["RouteOperationMapping"]
+        operations_map: dict = config["Provider"]["Operation"]
 
         for operation in operations:
             spec = self.operation_specs.get(operation)
@@ -209,14 +110,7 @@ class WebServiceGenerator:
     def dump_yaml(self, config: dict[str, Any]) -> str:
         """Serialize a web service configuration into YAML."""
 
-        return yaml.dump(
-            config,
-            Dumper=NoAliasDumper,
-            default_flow_style=False,
-            allow_unicode=True,
-            sort_keys=False,
-            indent=2,
-        )
+        return yaml.dump(config, Dumper=NoAliasDumper, allow_unicode=True, sort_keys=False, indent=2)
 
     def save_to_file(self, config: dict[str, Any], output_path: Path) -> None:
         """Persist a YAML configuration to disk."""
@@ -230,7 +124,6 @@ CLI_DESCRIPTION = "\n\n".join([
     SUPPORTED_OPERATIONS_DOC,
     AUTH_EXPECTATIONS_DOC,
 ])
-
 
 app = typer.Typer(
     add_completion=False,
@@ -249,14 +142,6 @@ def generate(
             str,
             typer.Option(help="Description of the web service"),
         ] = "Web service for Python client integration",
-        password: Annotated[
-            str,
-            typer.Option(help="Password for BasicAuth authentication"),
-        ] = DEFAULT_BASIC_AUTH_PASSWORD,
-        basic_auth_user: Annotated[
-            str,
-            typer.Option(help="Username for BasicAuth authentication"),
-        ] = DEFAULT_BASIC_AUTH_USER,
         framework_version: Annotated[
             str,
             typer.Option(help="Framework version for the generated YAML"),
@@ -268,6 +153,7 @@ def generate(
                 show_default="all",
             ),
         ] = None,
+        restricted
         output: Annotated[
             Path,
             typer.Option(help="Output file path"),
@@ -286,7 +172,6 @@ def generate(
         description=description,
         framework_version=framework_version,
         basic_auth_user=basic_auth_user,
-        basic_auth_password=password,
     )
     config = generator.build_config(enabled_ops)
     generator.save_to_file(config, output)

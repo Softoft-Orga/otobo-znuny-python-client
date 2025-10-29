@@ -141,7 +141,7 @@ def setup_otobo_system(env: SystemEnvironment | DockerEnvironment, config: Setup
     )
 
     # Create operation specs
-    from .webservices.generator import OperationSpec
+    from setup.webservices.webservice_models import OperationSpec
     operation_specs = []
     for op in config.enabled_operations:
         if op == TicketOperation.GET:

@@ -10,6 +10,7 @@ from urllib.parse import quote
 from httpx import AsyncClient
 from pydantic import BaseModel
 
+from models.request_models import WsTicketGetRequest
 from otobo_znuny_python_client.domain_models.basic_auth_model import BasicAuth
 from otobo_znuny_python_client.domain_models.otobo_client_config import ClientConfig
 from otobo_znuny_python_client.domain_models.ticket_models import Ticket, TicketCreate, TicketSearch, TicketUpdate
@@ -18,7 +19,6 @@ from otobo_znuny_python_client.mappers import (
     from_ws_ticket_detail,
     to_ws_auth,
     to_ws_ticket_create,
-    to_ws_ticket_get,
     to_ws_ticket_search,
     to_ws_ticket_update,
 )
@@ -31,6 +31,8 @@ from otobo_znuny_python_client.models.response_models import (
     WsTicketSearchResponse,
 )
 from otobo_znuny_python_client.util.otobo_errors import OTOBOError
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class OTOBOZnunyClient:
@@ -50,8 +52,22 @@ class OTOBOZnunyClient:
         parts = [p for p in [self._web_service_url_base, self.webservice_name] if p]
         self._ws_base_path = "/".join(quote(p, safe=":@$+,;=-._~()") for p in parts)
 
-    def _build_url(self, endpoint_name: str) -> str:
-        ep = "/".join(quote(s, safe=":@$+,;=-._~()") for s in endpoint_name.strip("/").split("/"))
+    def _build_url(self, endpoint_url: str, url_params: dict[str, Any] | None = None) -> str:
+        """
+        Build a URL path with optional parameter substitution.
+
+        Args:
+            endpoint_url: URL pattern with :param placeholders (e.g., "tickets/:TicketID")
+            url_params: Dictionary of parameter values to substitute
+
+        Returns:
+            Complete URL path with base path and substituted parameters
+        """
+        url_params = url_params or {}
+        for key, value in url_params.items():
+            endpoint_url = endpoint_url.replace(f":{key}", str(value))
+
+        ep = "/".join(quote(s, safe=":@$+,;=-._~()") for s in endpoint_url.strip("/").split("/"))
         return f"/{self._ws_base_path}/{ep}" if self._ws_base_path else f"/{ep}"
 
     def _extract_error(self, payload: Any) -> OTOBOError | None:
@@ -60,20 +76,19 @@ class OTOBOZnunyClient:
             return OTOBOError(str(err.get("ErrorCode", "")), str(err.get("ErrorMessage", "")))
         return None
 
-    T = TypeVar("T", bound=BaseModel)
-
     async def _send(
             self,
             method: HTTPMethod,
             operation: TicketOperation,
             response_model: type[T],
             data: dict[str, Any] | None = None,
+            url_params: dict[str, Any] | None = None,
     ) -> T:
         if not self._auth:
             raise RuntimeError("Client is not authenticated")
         ws_auth = to_ws_auth(self._auth)
-        endpoint_name = self.operation_map[operation]
-        url = self._build_url(endpoint_name)
+        endpoint_url = self.operation_map[operation]
+        url = self._build_url(endpoint_url, url_params)
         request_id = uuid.uuid4().hex
         payload = ws_auth.model_dump(by_alias=True, exclude_none=True, with_secrets=True) | (data or {})
 
@@ -120,12 +135,12 @@ class OTOBOZnunyClient:
         return from_ws_ticket_detail(response.Ticket)
 
     async def get_ticket(self, ticket_id: int | str) -> Ticket:
-        request = to_ws_ticket_get(int(ticket_id))
         response: WsTicketGetResponse = await self._send(
             HTTPMethod.POST,
             TicketOperation.GET,
             WsTicketGetResponse,
-            data=request.model_dump(exclude_none=True, by_alias=True),
+            data=WsTicketGetRequest().model_dump(exclude_none=True, by_alias=True),
+            url_params={"TicketID": ticket_id},
         )
         tickets = response.Ticket or []
         if len(tickets) != 1:

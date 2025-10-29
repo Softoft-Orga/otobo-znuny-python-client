@@ -1,6 +1,7 @@
 # Python OTOBO Client Library
 
-An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx` and `pydantic` for
+An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx`
+and `pydantic` for
 type safety
 and ease of use.
 
@@ -16,7 +17,7 @@ uv run --group docs mkdocs serve
 
 The published sections include:
 
-- [Getting started (English)](docs/getting-started.en.md)
+- [Getting started (English)](docs/getting-started.md)
 - [Library overview](docs/library-overview.md)
 
 ## Features

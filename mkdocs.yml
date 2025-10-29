@@ -4,7 +4,7 @@ repo_url: https://github.com/Softoft-GmbH/otobo-znuny-python-client
 repo_name: Softoft-GmbH/otobo-znuny-python-client
 nav:
   - Home: index.md
-  - Getting Started: getting-started.en.md
+  - Getting Started: getting-started.md
   - Interactive Installation Setup: interactive-installation-setup.md
 theme:
   name: material

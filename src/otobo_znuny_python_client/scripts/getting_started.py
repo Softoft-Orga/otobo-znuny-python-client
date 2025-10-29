@@ -8,9 +8,9 @@ from pathlib import Path
 import typer
 from pydantic import BaseModel, ConfigDict
 
+from otobo_znuny_python_client.cli.interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.domain_models.otobo_client_config import OperationUrlMap
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.scripts.cli_interface import OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.scripts.setup_webservices import WebServiceGenerator
 
 app = typer.Typer()
