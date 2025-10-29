@@ -76,44 +76,30 @@ package "Setup and Bootstrap" <<Rectangle>> {
     }
 }
 
-package "WebService Generator" <<Rectangle>> {
-    class WebServiceGenerator {
-        + name: str
-        + description: str
-        + framework_version: str
-        + basic_auth_user: str
-        + basic_auth_password: str
-        + operation_specs: dict
+package "Webservice Builder" <<Rectangle>> {
+    class WebserviceBuilder {
+        - _name: str
+        - _framework_version: str
+        - _operation_specs: dict
+        - _enabled_operations: list[TicketOperation]
+        - _restricted_user: str | None
 
-        + build_config(operations): dict
+        + set_name(name): WebserviceBuilder
+        + set_framework_version(version): WebserviceBuilder
+        + set_restricted_by(username): WebserviceBuilder
+        + enable_operation(operation): WebserviceBuilder
+        + build(): dict
         + dump_yaml(config): str
         + save_to_file(config, output_path): void
     }
 
     class OperationSpec {
+        + operation_name: str
         + op: TicketOperation
         + route: str
         + description: str
         + methods: list[str]
-        + include_ticket_data: Literal["0", "1"]
-    }
-
-    class RouteMappingConfig {
-        + Route: str
-        + RequestMethod: list[str]
-        + ParserBackend: Literal["JSON"]
-    }
-
-    class ProviderOperationConfig {
-        + Type: str
-        + Description: str
-        + IncludeTicketData: Literal["0", "1"]
-        + MappingInbound: dict
-        + MappingOutbound: dict
-    }
-
-    class NoAliasDumper {
-        + ignore_aliases(data): bool
+        + include_ticket_data: str
     }
 }
 
@@ -151,13 +137,10 @@ setup_function ..> SystemEnvironment : uses
 setup_function ..> DockerEnvironment : uses
 setup_function *-- SetupConfig : configured by
 setup_function ..> OtoboConsole : uses
-setup_function ..> WebServiceGenerator : uses
+setup_function ..> WebserviceBuilder : uses
 
-' Generator relationships
-WebServiceGenerator *-- OperationSpec : uses
-WebServiceGenerator ..> RouteMappingConfig : generates
-WebServiceGenerator ..> ProviderOperationConfig : generates
-WebServiceGenerator ..> NoAliasDumper : serializes with
+' Builder relationships
+WebserviceBuilder *-- OperationSpec : uses
 OperationSpec *-- TicketOperation : references
 
 ' Utilities

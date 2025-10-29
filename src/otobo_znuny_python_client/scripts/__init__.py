@@ -9,7 +9,7 @@ import warnings
 # Backward compatibility imports
 from otobo_znuny_python_client.cli.interface import ArgsBuilder, CmdResult, OtoboCommandRunner, OtoboConsole
 from otobo_znuny_python_client.setup.bootstrap import SystemEnvironment, set_env_var
-from otobo_znuny_python_client.setup.webservices.generator import WebServiceGenerator
+from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
 from otobo_znuny_python_client.setup.webservices.utils import generate_enabled_operations_list
 
 warnings.warn(
@@ -24,7 +24,7 @@ __all__ = [
     "OtoboCommandRunner",
     "OtoboConsole",
     "SystemEnvironment",
-    "WebServiceGenerator",
+    "WebserviceBuilder",
     "generate_enabled_operations_list",
     "set_env_var",
 ]
