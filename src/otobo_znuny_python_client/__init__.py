@@ -1,7 +1,15 @@
 """Convenience re-exports for the public package API."""
 
-from .clients.otobo_client import OTOBOZnunyClient as Client
+from .cli.command_models import (
+    ArgsBuilder,
+    CmdResult,
+    OTOBO_COMMANDS,
+    Permission,
+)
+from .cli.otobo_command_runner import OtoboCommandRunner
+from .cli.otobo_console import OtoboConsole
 from .clients.otobo_client import OTOBOZnunyClient
+from .clients.otobo_client import OTOBOZnunyClient as Client
 from .domain_models.basic_auth_model import BasicAuth
 from .domain_models.otobo_client_config import ClientConfig, OperationUrlMap
 from .domain_models.ticket_models import (
@@ -21,14 +29,6 @@ from .setup.webservices.operations import (
     SUPPORTED_OPERATIONS_DOC,
 )
 from .setup.webservices.webservice_models import OperationSpec
-from .cli.interface import (
-    ArgsBuilder,
-    CmdResult,
-    OtoboCommandRunner,
-    OtoboConsole,
-    OTOBO_COMMANDS,
-    Permission,
-)
 
 __all__ = [
     "Article",

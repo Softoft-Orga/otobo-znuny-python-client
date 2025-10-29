@@ -6,7 +6,7 @@ from typing import Iterable
 
 from pydantic import BaseModel
 
-from cli import OtoboCommandRunner
+from otobo_znuny_python_client import OtoboCommandRunner
 
 DEFAULT_CONSOLE_PATHS = (
     Path("/opt/otobo/bin/otobo.Console.pl"),

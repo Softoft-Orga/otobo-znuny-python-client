@@ -4,10 +4,10 @@ import secrets
 import string
 from typing import Callable
 
-from cli.environments import OtoboSystem
-from otobo_znuny_python_client.cli.interface import OtoboConsole
-from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
-from setup.config import SetupConfig
+from .config import SetupConfig
+from .webservices.builder import WebserviceBuilder
+from ..cli.environments import OtoboSystem
+from ..cli.otobo_console import OtoboConsole
 
 PermissionMap = {
     "owner": "owner",

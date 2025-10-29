@@ -1,87 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-import subprocess
-from typing import Literal
 
-Permission = Literal["ro", "move_into", "create", "owner", "priority", "rw"]
-
-OTOBO_COMMANDS = {
-    "AddUser": "Admin::User::Add",
-    "AddGroup": "Admin::Group::Add",
-    "AddQueue": "Admin::Queue::Add",
-    "AddWebservice": "Admin::WebService::Add",
-    "LinkUserToGroup": "Admin::Group::UserLink",
-}
-
-
-@dataclass
-class CmdResult:
-    ok: bool
-    code: int
-    out: str
-    err: str
-
-
-class ArgsBuilder:
-    def __init__(self):
-        self._parts: list[str] = []
-
-    def opt(self, name: str, value: str | int | Path | None = None) -> ArgsBuilder:
-        if value is None:
-            self._parts.append(name)
-        else:
-            self._parts.extend([name, str(value)])
-        return self
-
-    def opt_if(self, name: str, value: str | int | Path | None) -> ArgsBuilder:
-        if value is not None:
-            self._parts.extend([name, str(value)])
-        return self
-
-    def repeat_if(self, name: str, values: list[str | int | Path] | None) -> ArgsBuilder:
-        if values:
-            for v in values:
-                self._parts.extend([name, str(v)])
-        return self
-
-    def flag(self, name: str, enabled: bool = True) -> ArgsBuilder:
-        if enabled:
-            self._parts.append(name)
-        return self
-
-    def repeat(self, name: str, values: list[str | int | Path]) -> ArgsBuilder:
-        for v in values:
-            self._parts.extend([name, str(v)])
-        return self
-
-    def to_list(self) -> list[str]:
-        return list(self._parts)
-
-
-class OtoboCommandRunner:
-    def __init__(self, prefix: list[str], executable: Path | str, log_commands=True):
-        self.prefix: list[str] = prefix
-        self.executable: str = str(executable)
-        self.log_commands: bool = log_commands
-
-    @classmethod
-    def from_docker(cls, container: str = "otobo-web-1",
-                    console_path="./bin/otobo.Console.pl") -> OtoboCommandRunner:
-        return cls(["docker", "exec", container], console_path)
-
-    @classmethod
-    def from_local(cls, console_path="/opt/otobo/bin/otobo.Console.pl") -> OtoboCommandRunner:
-        return cls([], console_path)
-
-    def run(self, operation: str, args: list[str]) -> CmdResult:
-        cmd = [*self.prefix, self.executable, operation, *args]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-        cmd_result = CmdResult(proc.returncode == 0, proc.returncode, proc.stdout.strip(), proc.stderr.strip())
-        if self.log_commands:
-            pass
-        return cmd_result
+from .command_models import ArgsBuilder, CmdResult, OTOBO_COMMANDS, Permission
+from .otobo_command_runner import OtoboCommandRunner
 
 
 class OtoboConsole:

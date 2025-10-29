@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from domain_models.ticket_operation import TicketOperation
+from ..domain_models.ticket_operation import TicketOperation
 
 
 class SetupConfig(BaseModel):

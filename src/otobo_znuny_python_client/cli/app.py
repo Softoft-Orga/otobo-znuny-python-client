@@ -4,14 +4,15 @@ from typing import Iterable, List, Optional
 
 import typer
 
-from cli.environments import detect_environment, LocalSystem, DockerSystem
-from otobo_znuny_python_client.cli.interface import OtoboConsole, Permission
-from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.bootstrap import (
+from .command_models import Permission
+from .environments import detect_environment, LocalSystem, DockerSystem
+from .otobo_console import OtoboConsole
+from ..domain_models.ticket_operation import TicketOperation
+from ..setup.bootstrap import (
     generate_random_password,
     setup_otobo_system,
 )
-from setup.config import SetupConfig
+from ..setup.config import SetupConfig
 
 app = typer.Typer(help="Command line utilities for interacting with OTOBO/Znuny systems.")
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from otobo_znuny_python_client.setup.bootstrap import set_env_var
-from otobo_znuny_python_client.setup.webservices import WebserviceBuilder
+from .webservices.builder import WebserviceBuilder
 
-__all__ = ["WebserviceBuilder", "set_env_var"]
+__all__ = ["WebserviceBuilder"]
