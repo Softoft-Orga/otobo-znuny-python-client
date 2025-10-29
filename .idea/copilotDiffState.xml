@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/test_webservice_factory.py">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/test_webservice_factory.py" />
+              <option name="updatedContent" value="&quot;&quot;&quot;Quick test for webservice_factory implementation.&quot;&quot;&quot;&#10;from otobo_znuny_python_client.cli.webservice_factory import create_webservice&#10;from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation&#10;&#10;# Test 1: Create webservice with all operations and user restriction&#10;operations = [TicketOperation.CREATE, TicketOperation.GET, TicketOperation.SEARCH, TicketOperation.UPDATE]&#10;result = create_webservice(&quot;TestService&quot;, operations, &quot;testuser&quot;)&#10;&#10;print(&quot;Test 1: Create webservice with all operations and user restriction&quot;)&#10;print(f&quot;Result type: {type(result)}&quot;)&#10;print(f&quot;Has Provider: {'Provider' in result}&quot;)&#10;print(f&quot;Has operations: {'Operation' in result.get('Provider', {})}&quot;)&#10;print(f&quot;Description: {result.get('Description')}&quot;)&#10;&#10;# Count operations&#10;operations_dict = result.get('Provider', {}).get('Operation', {})&#10;print(f&quot;Number of operations enabled: {len(operations_dict)}&quot;)&#10;print(f&quot;Operation names: {list(operations_dict.keys())}&quot;)&#10;&#10;# Check restriction&#10;provider_config = result.get('Provider', {})&#10;transport_config = provider_config.get('Transport', {}).get('Config', {})&#10;print(f&quot;Has Transport: {bool(transport_config)}&quot;)&#10;&#10;# Check if user restriction is in description&#10;has_restriction = 'Restricted to user' in result.get('Description', '')&#10;print(f&quot;Has user restriction in description: {has_restriction}&quot;)&#10;&#10;print(&quot;\n&quot; + &quot;=&quot;*50 + &quot;\n&quot;)&#10;&#10;# Test 2: Create webservice without user restriction&#10;result2 = create_webservice(&quot;AnotherService&quot;, [TicketOperation.CREATE, TicketOperation.GET], None)&#10;print(&quot;Test 2: Create webservice without user restriction&quot;)&#10;print(f&quot;Description: {result2.get('Description')}&quot;)&#10;has_restriction2 = 'Restricted to user' in result2.get('Description', '')&#10;print(f&quot;Has user restriction in description: {has_restriction2}&quot;)&#10;operations_dict2 = result2.get('Provider', {}).get('Operation', {})&#10;print(f&quot;Number of operations enabled: {len(operations_dict2)}&quot;)&#10;&#10;print(&quot;\n✅ All tests passed!&quot;)&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

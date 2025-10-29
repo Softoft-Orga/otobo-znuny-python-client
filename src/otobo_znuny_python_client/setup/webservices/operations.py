@@ -33,7 +33,7 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
     TicketOperation.UPDATE: OperationSpec(
         operation_name="ticket-update",
         op=TicketOperation.UPDATE,
-        route="/tickets/:TicketId",
+        route="/ticket-update",
         description="Updates an existing ticket.",
         methods=["PUT"],
         include_ticket_data="1",

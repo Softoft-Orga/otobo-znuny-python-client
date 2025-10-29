@@ -21,9 +21,8 @@ from otobo_znuny_python_client.mappers import (
     to_ws_ticket_search,
     to_ws_ticket_update,
 )
-from otobo_znuny_python_client.models.request_models import WsTicketGetRequest
 from otobo_znuny_python_client.models.request_models import (
-    WsTicketMutationRequest,
+    WsTicketMutationRequest, WsTicketGetRequest,
 )
 from otobo_znuny_python_client.models.response_models import (
     WsTicketGetResponse,

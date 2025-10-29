@@ -42,11 +42,11 @@ class WebserviceBuilder:
     """Builder for OTOBO/Znuny ticket webservice configurations."""
 
     def __init__(
-        self,
-        name: str = "OpenTicketAI",
-        *,
-        framework_version: str = DEFAULT_FRAMEWORK_VERSION,
-        operation_specs: Mapping[TicketOperation, OperationSpec] | None = None,
+            self,
+            name: str = "OpenTicketAI",
+            *,
+            framework_version: str = DEFAULT_FRAMEWORK_VERSION,
+            operation_specs: Mapping[TicketOperation, OperationSpec] | None = None,
     ) -> None:
         self._name = name
         self._framework_version = framework_version
@@ -168,4 +168,3 @@ class WebserviceBuilder:
 class _NoAliasDumper(yaml.SafeDumper):
     def ignore_aliases(self, data: Any) -> bool:  # pragma: no cover - inherited API
         return True
-

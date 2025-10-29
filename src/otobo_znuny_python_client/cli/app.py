@@ -4,23 +4,21 @@ from typing import Iterable, List, Optional
 
 import typer
 
+from cli.environments import detect_environment, LocalSystem, DockerSystem
 from otobo_znuny_python_client.cli.interface import OtoboConsole, Permission
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
 from otobo_znuny_python_client.setup.bootstrap import (
-    DockerEnvironment,
-    SetupConfig,
-    SystemEnvironment,
-    detect_environment,
     generate_random_password,
     setup_otobo_system,
 )
+from setup.config import SetupConfig
 
 app = typer.Typer(help="Command line utilities for interacting with OTOBO/Znuny systems.")
 
-_ENV_CACHE: SystemEnvironment | DockerEnvironment | None = None
+_ENV_CACHE: LocalSystem | DockerSystem | None = None
 
 
-def _require_environment() -> SystemEnvironment | DockerEnvironment:
+def _require_environment() -> LocalSystem | DockerSystem:
     global _ENV_CACHE
     if _ENV_CACHE is None:
         env = detect_environment()
@@ -167,15 +165,12 @@ def interactive_setup() -> None:
 
     webservice_name = typer.prompt("Webservice name", default="PythonClientWebService")
     webservice_description = typer.prompt("Webservice description", default="Web service for Python client integration")
-    webservice_password = typer.prompt("Webservice password", default=generate_random_password(), hide_input=True,
-                                       confirmation_prompt=True)
     enabled_operations = _prompt_operations(
         [TicketOperation.GET, TicketOperation.SEARCH, TicketOperation.CREATE, TicketOperation.UPDATE]
     )
 
     config = SetupConfig(
         webservice_name=webservice_name,
-        webservice_password=webservice_password,
         webservice_description=webservice_description,
         enabled_operations=enabled_operations,
         group_name=group_name,
