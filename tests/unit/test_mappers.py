@@ -14,12 +14,10 @@ from otobo_znuny_python_client.domain_models.ticket_models import (
 from otobo_znuny_python_client.mappers import (
     from_ws_ticket_detail,
     to_ws_ticket_create,
-    to_ws_ticket_get,
     to_ws_ticket_search,
     to_ws_ticket_update,
 )
 from otobo_znuny_python_client.models.request_models import (
-    WsTicketGetRequest,
     WsTicketMutationRequest,
     WsTicketSearchRequest,
     WsTicketUpdateRequest,
@@ -131,13 +129,6 @@ def test_build_ticket_search_request_idname_lists() -> None:
     assert req.PriorityIDs == [4]
     assert req.Types == ["Incident"]
     assert req.UseSubQueues == 1
-
-
-@pytest.mark.unit
-def test_build_ticket_get_request_by_id_and_number() -> None:
-    r1 = to_ws_ticket_get(ticket_id=7)
-    assert isinstance(r1, WsTicketGetRequest)
-    assert r1.TicketID == 7
 
 
 @pytest.mark.unit

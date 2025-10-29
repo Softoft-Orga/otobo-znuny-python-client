@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="c1d56a3e-6e62-4dde-8e27-7324534f5979" name="OpenTicketAI Demo">
-        <fileTransfer accessType="SFTP" host="138.199.193.172" port="22" sshConfigId="3c4ff2a6-cd0a-4b13-bf40-33f3f8b17434" sshConfig="root@138.199.193.172:22 key" keyPair="true">
+        <fileTransfer accessType="SFTP" host="52.57.217.182" port="22" sshConfigId="3c4ff2a6-cd0a-4b13-bf40-33f3f8b17434" sshConfig="ubuntu@52.57.217.182:22 key" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" isUseSudo="true" />
           </advancedOptions>

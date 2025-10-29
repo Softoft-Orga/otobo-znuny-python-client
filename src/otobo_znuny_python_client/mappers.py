@@ -19,7 +19,6 @@ from otobo_znuny_python_client.models.base_models import BooleanInteger
 from otobo_znuny_python_client.models.request_models import (
     WsAuthData,
     WsDynamicFieldFilter,
-    WsTicketGetRequest,
     WsTicketMutationRequest,
     WsTicketSearchRequest,
     WsTicketUpdateRequest,
@@ -227,10 +226,6 @@ def to_ws_ticket_search(search_model: TicketSearch) -> WsTicketSearchRequest:
         UseSubQueues=search_model.use_subqueues,
         Limit=search_model.limit,
     )
-
-
-def to_ws_ticket_get(ticket_id: int) -> WsTicketGetRequest:
-    return WsTicketGetRequest(TicketID=ticket_id)
 
 
 def to_ws_auth(basic_auth: BasicAuth) -> WsAuthData:

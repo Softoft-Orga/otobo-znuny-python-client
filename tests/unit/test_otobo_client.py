@@ -122,14 +122,8 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
             assert by_alias is True
             return {"TicketID": "123"}
 
-    def fake_build_get_request(ticket_id: int) -> DummyRequest:
-        assert ticket_id == 456
-        return DummyRequest()
-
-    monkeypatch.setattr(otobo_client, "to_ws_ticket_get", fake_build_get_request)
-
     async def fake_send(*args, **kwargs):  # type: ignore[no-untyped-def]
-        return WsTicketGetResponse(Ticket=[{"TicketID": "456", "Title": "Found"}])
+        return WsTicketGetResponse(Ticket=[WsTicketOutput(TicketID=456, TicketNumber="2025456")])
 
     def fake_parse(arg: Any) -> Any:
         return TicketCreate(
@@ -152,14 +146,8 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_ticket_raises_when_not_single_ticket(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        otobo_client,
-        "to_ws_ticket_get",
-        lambda ticket_id: type("Req", (), {"model_dump": lambda *a, **kw: {}})(),
-    )
-
     async def fake_send(*args, **kwargs):  # type: ignore[no-untyped-def]
-        return WsTicketGetResponse(Ticket=[{"TicketID": "1"}, {"TicketID": "2"}])
+        return WsTicketGetResponse(Ticket=[WsTicketOutput(TicketID=1), WsTicketOutput(TicketID=2)])
 
     monkeypatch.setattr(otobo_client.OTOBOZnunyClient, "_send", fake_send)
 
