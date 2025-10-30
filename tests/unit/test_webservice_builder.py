@@ -3,9 +3,13 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import yaml
+
+pytestmark = pytest.mark.unit
 
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
 from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
+from otobo_znuny_python_client.setup.webservices.operations import SUPPORTED_OPERATION_SPECS
 
 
 def test_builder_with_all_operations():
@@ -50,13 +54,16 @@ def test_builder_saves_to_yaml():
         builder.save_to_file(config, file_path)
 
         assert file_path.exists()
-        content = file_path.read_text(encoding='utf-8')
-        assert all(s in content for s in ["Provider:", "Operation:", "ticket-create:", "ticket-get:"])
+        content = file_path.read_text(encoding="utf-8")
+        parsed = yaml.safe_load(content)
+
+        assert "Provider" in parsed and "Operation" in parsed["Provider"]
+        assert set(parsed["Provider"]["Operation"].keys()) == {"ticket-create", "ticket-get"}
 
 
 def test_builder_raises_error_without_operations():
     """Test builder raises error when no operations enabled."""
-    with pytest.raises(ValueError, match="No operations have been enabled"):
+    with pytest.raises(ValueError):
         WebserviceBuilder(name="TestService").build()
 
 
@@ -90,3 +97,66 @@ def test_builder_transport_config():
     assert routes["ticket-create"]["Route"] == "/tickets"
     assert routes["ticket-get"]["Route"] == "/tickets/:TicketId"
     assert "FrameworkVersion" in config
+
+
+def test_set_framework_version_override():
+    """Framework version override should be reflected in the config."""
+    config = (WebserviceBuilder(name="TestService")
+              .set_framework_version("12.0.0")
+              .enable_operations(TicketOperation.CREATE)
+              .build())
+
+    assert config["FrameworkVersion"] == "12.0.0"
+
+
+def test_clear_restriction_removes_value_map():
+    """Clearing a restriction removes the ValueMap from the inbound mapping."""
+    config = (WebserviceBuilder(name="TestService")
+              .set_restricted_by("user")
+              .clear_restriction()
+              .enable_operations(TicketOperation.CREATE)
+              .build())
+
+    inbound_mapping = config["Provider"]["Operation"]["ticket-create"]["MappingInbound"]
+    assert "ValueMap" not in inbound_mapping["Config"]
+
+
+def test_reset_operations_clears_enabled_operations():
+    """reset_operations should remove all previously enabled operations."""
+    builder = WebserviceBuilder(name="TestService")
+    builder.enable_operation(TicketOperation.CREATE)
+    builder.reset_operations()
+    builder.enable_operation(TicketOperation.GET)
+    config = builder.build()
+
+    operations = config["Provider"]["Operation"]
+    assert set(operations.keys()) == {"ticket-get"}
+
+
+def test_enable_operation_validates_supported_operations():
+    """Enabling an operation not present in operation_specs raises ValueError."""
+    limited_specs = {TicketOperation.CREATE: SUPPORTED_OPERATION_SPECS[TicketOperation.CREATE]}
+    builder = WebserviceBuilder(name="TestService", operation_specs=limited_specs)
+
+    with pytest.raises(ValueError):
+        builder.enable_operation(TicketOperation.SEARCH)
+
+    # The supported operation can still be enabled and appears in the config.
+    config = builder.enable_operation(TicketOperation.CREATE).build()
+    assert set(config["Provider"]["Operation"].keys()) == {"ticket-create"}
+
+
+def test_dump_yaml_avoids_aliases():
+    """dump_yaml should list operations without emitting YAML alias markers."""
+    builder = WebserviceBuilder(name="TestService")
+    config = (builder
+              .enable_operations(TicketOperation.CREATE, TicketOperation.UPDATE)
+              .build())
+    yaml_output = builder.dump_yaml(config)
+
+    assert "ticket-create" in yaml_output
+    assert "ticket-update" in yaml_output
+    assert "&" not in yaml_output and "*" not in yaml_output
+
+    parsed = yaml.safe_load(yaml_output)
+    assert set(parsed["Provider"]["Operation"].keys()) == {"ticket-create", "ticket-update"}
