@@ -33,7 +33,15 @@ _TRANSPORT_CONFIG_TEMPLATE: dict[str, Any] = {
     "AdditionalHeaders": None,
     "KeepAlive": "",
     "MaxLength": "1000000",
-    "OutboundHeaders": {},
+    "OutboundHeaders": {
+        "Common": {
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
+            "X-Frame-Options": "DENY",
+            "Permissions-Policy": "accelerometer=(), camera=(), microphone=(), geolocation=()",
+
+        }
+    },
     "RouteOperationMapping": {},
 }
 

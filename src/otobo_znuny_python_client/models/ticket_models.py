@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 
@@ -32,7 +31,7 @@ class WsDynamicField(BaseModel):
     Value: str | None = None
 
 
-class WsArticleDetail(BaseModel):
+class WsArticle(BaseModel):
     ArticleID: int | None = None
     ArticleNumber: int | None = None
     From: str | None = None
@@ -48,10 +47,10 @@ class WsArticleDetail(BaseModel):
 
 
 class WsTicketOutput(WsTicketBase):
-    Article: list[WsArticleDetail] | WsArticleDetail | None = None
+    Article: list[WsArticle] | WsArticle | None = None
     DynamicField: list[WsDynamicField] | None = None
 
-    def get_articles(self) -> list[WsArticleDetail]:
+    def get_articles(self) -> list[WsArticle]:
         if self.Article is None:
             return []
         if isinstance(self.Article, list):

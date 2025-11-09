@@ -19,7 +19,7 @@ DEFAULT_WEBSERVICE_PATHS = (
     Path("/opt/otrs/var/webservices"),
 )
 DEFAULT_DOCKER_CONTAINER_CANDIDATES = ("otobo-web-1", "otobo_web_1")
-DEFAULT_DOCKER_CONSOLE_PATH = Path("/bin/otobo.Console.pl")
+DEFAULT_DOCKER_CONSOLE_PATH = "/opt/otobo/bin/otobo.Console.pl"
 DEFAULT_DOCKER_WEBSERVICES_PATH = Path("/var/lib/docker/volumes/otobo_opt_otobo/_data/var/webservices")
 
 
@@ -52,14 +52,14 @@ def _first_existing_path(paths: Iterable[Path]) -> Path | None:
     return None
 
 
-def detect_environment(
+def detect_system(
         *,
         console_paths: Iterable[Path] = DEFAULT_CONSOLE_PATHS,
         webservice_paths: Iterable[Path] = DEFAULT_WEBSERVICE_PATHS,
         docker_container_candidates: Iterable[str] = DEFAULT_DOCKER_CONTAINER_CANDIDATES,
-        docker_console_path: Path = DEFAULT_DOCKER_CONSOLE_PATH,
+        docker_console_path: str = DEFAULT_DOCKER_CONSOLE_PATH,
         docker_webservices_path: Path = DEFAULT_DOCKER_WEBSERVICES_PATH,
-) -> LocalSystem | DockerSystem | None:
+) -> OtoboSystem | None:
     """Detect the active OTOBO/Znuny environment."""
 
     container_name = _get_running_container(docker_container_candidates)
@@ -74,14 +74,14 @@ def detect_environment(
     webservices_dir = _first_existing_path(webservice_paths)
 
     if console_path and webservices_dir:
-        return LocalSystem(console_path=console_path, webservices_dir=webservices_dir)
+        return LocalSystem(console_path=str(console_path), webservices_dir=webservices_dir)
 
     return None
 
 
 class OtoboSystem(BaseModel):
     webservices_dir: Path
-    console_path: Path
+    console_path: str
 
     def build_command_runner(self) -> OtoboCommandRunner:
         pass
@@ -97,3 +97,18 @@ class DockerSystem(OtoboSystem):
 
     def build_command_runner(self) -> OtoboCommandRunner:
         return OtoboCommandRunner.from_docker(container=self.container_name, console_path=self.console_path)
+
+    def copy_to_container(self, source_path: str, container_path: str) -> bool:
+        """Copy a file from the host to the Docker container."""
+        args = ["docker", "cp", source_path, f"{self.container_name}:{container_path}"]
+        print(args)
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            print(f"Error copying file to container: {result.stderr}")
+            return False
+        return True

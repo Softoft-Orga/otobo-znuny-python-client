@@ -4,25 +4,24 @@ from typing import Iterable, List, Optional
 
 import typer
 
+from setup.bootstrap import setup_otobo_system
+from setup.config import SetupConfig
 from .command_models import Permission
-from .environments import detect_environment, LocalSystem, DockerSystem
+from .environments import detect_system, OtoboSystem
 from .otobo_console import OtoboConsole
 from ..domain_models.ticket_operation import TicketOperation
-from ..setup.bootstrap import (
-    generate_random_password,
-    setup_otobo_system,
-)
-from ..setup.config import SetupConfig
+from ..models.base_models import UserModel, GroupConfig, QueueConfig
+from ..setup.bootstrap import generate_random_password
 
 app = typer.Typer(help="Command line utilities for interacting with OTOBO/Znuny systems.")
 
-_ENV_CACHE: LocalSystem | DockerSystem | None = None
+_ENV_CACHE: OtoboSystem | None = None
 
 
-def _require_environment() -> LocalSystem | DockerSystem:
+def _require_environment() -> OtoboSystem:
     global _ENV_CACHE
     if _ENV_CACHE is None:
-        env = detect_environment()
+        env = detect_system()
         if env is None:
             typer.echo(
                 "Could not automatically detect an OTOBO/Znuny environment. "
@@ -70,7 +69,17 @@ def add_user(
     console = _build_console()
 
     final_password = password or typer.prompt("Password", hide_input=True, confirmation_prompt=True)
-    result = console.add_user(user_name, first_name, last_name, email, final_password, groups)
+
+    user = UserModel(
+        user_name=user_name,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password=final_password,
+        groups=groups
+    )
+
+    result = console.add_user(user)
     _handle_result(result, f"User '{user_name}' created successfully.")
 
 
@@ -80,7 +89,13 @@ def add_group(
         comment: Optional[str] = typer.Option(None, "--comment", help="Optional comment for the group."),
 ) -> None:
     console = _build_console()
-    result = console.add_group(group_name, comment)
+
+    group = GroupConfig(
+        name=group_name,
+        comment=comment
+    )
+
+    result = console.add_group(group)
     _handle_result(result, f"Group '{group_name}' created successfully.")
 
 
@@ -111,9 +126,10 @@ def add_queue(
         calendar: Optional[int] = typer.Option(None, "--calendar", help="Calendar identifier."),
 ) -> None:
     console = _build_console()
-    result = console.add_queue(
-        name,
-        group,
+
+    queue = QueueConfig(
+        name=name,
+        group=group,
         system_address_id=system_address_id,
         system_address_name=system_address_name,
         comment=comment,
@@ -123,7 +139,21 @@ def add_queue(
         solution_time=solution_time,
         calendar=calendar,
     )
+
+    result = console.add_queue(queue)
     _handle_result(result, f"Queue '{name}' created successfully.")
+
+
+@app.command("list-queues")
+def list_queues() -> None:
+    """List all queues in the OTOBO/Znuny system."""
+    console = _build_console()
+    result = console.list_all_queues()
+    if result.ok:
+        typer.echo(result.out)
+    else:
+        typer.echo(f"Failed to list queues: {result.err}", err=True)
+        raise typer.Exit(code=1)
 
 
 def _prompt_operations(default: Iterable[TicketOperation]) -> list[TicketOperation]:
@@ -147,54 +177,84 @@ def _prompt_permissions(default_permissions: Iterable[str]) -> list[str]:
 
 @app.command("setup-otobo-znuny-system")
 def interactive_setup() -> None:
+    """
+    Interactive setup for OTOBO/Znuny webservice configuration.
+
+    This command guides you through creating:
+    - A dedicated user for webservice access (recommended)
+    - A webservice with configured operations
+    """
     env = _require_environment()
+    console = OtoboConsole(env.build_command_runner())
+
     typer.echo(f"Using environment: {env}")
+    typer.echo("\n=== OTOBO/Znuny Webservice Setup ===\n")
 
-    group_name = typer.prompt("Group name", default="python-client-group")
-    group_comment = typer.prompt("Group comment", default="Group for Python client operations")
+    create_new_user = typer.confirm(
+        "Do you want to create a new user specifically for the webservice? (Recommended)",
+        default=True
+    )
 
-    user_name = typer.prompt("User login", default="python-client-user")
-    user_first_name = typer.prompt("User first name", default="Python")
-    user_last_name = typer.prompt("User last name", default="Client")
-    user_email = typer.prompt("User email", default="python-client@example.com")
-    user_password = typer.prompt("User password", default=generate_random_password(), hide_input=True,
-                                 confirmation_prompt=True)
-    user_permissions = _prompt_permissions(["rw"])
+    user = UserModel()
+    user_users_permissions = []
+    webservice_restricted_user = None
+    if create_new_user:
+        typer.echo("\n--- User Configuration ---")
 
-    queue_name = typer.prompt("Queue name", default="Python Client Queue")
-    queue_comment = typer.prompt("Queue comment", default="Queue for tickets created via Python client")
+        user.user_name = typer.prompt("User login", default="python-client-user")
+        user.first_name = typer.prompt("User first name", default="Python")
+        user.last_name = typer.prompt("User last name", default="Client")
+        user.email = typer.prompt("User email", default="python-client@example.com")
+        user.password = typer.prompt(
+            "User password",
+            default=generate_random_password(),
+            hide_input=True,
+            confirmation_prompt=True
+        )
 
+        while not console.is_strong_password(user.password):
+            typer.echo("The provided password is too weak. Please choose a stronger password.", err=True)
+            user.password = typer.prompt(
+                "User password",
+                hide_input=True,
+                confirmation_prompt=True
+            )
+        typer.echo("\n--- User Permissions ---")
+        user_users_permissions = typer.prompt(
+            f"What permissions to grant {user.user_name} on the 'users' group? ",
+            default=["rw"]
+        )
+
+        typer.echo(f"Granting 'ro' permission on standard groups to {user.user_name}")
+
+    else:
+        typer.echo("\n--- Webservice Restriction Configuration ---")
+        restrict_webservice = typer.confirm("Do you want to restrict the webservice to a specific user?\n"
+                                            "(If yes, only that user can access the webservice endpoint)")
+
+        if restrict_webservice:
+            webservice_restricted_user = typer.prompt("Enter the username to restrict the webservice to")
+        else:
+            typer.echo("⚠️  Webservice will NOT be restricted to a specific user.")
+
+    typer.echo("\n--- Webservice Configuration ---")
     webservice_name = typer.prompt("Webservice name", default="PythonClientWebService")
-    webservice_description = typer.prompt("Webservice description", default="Web service for Python client integration")
     enabled_operations = _prompt_operations(
         [TicketOperation.GET, TicketOperation.SEARCH, TicketOperation.CREATE, TicketOperation.UPDATE]
     )
 
-    config = SetupConfig(
-        webservice_name=webservice_name,
-        webservice_description=webservice_description,
-        enabled_operations=enabled_operations,
-        group_name=group_name,
-        group_comment=group_comment,
-        user_name=user_name,
-        user_first_name=user_first_name,
-        user_last_name=user_last_name,
-        user_email=user_email,
-        user_password=user_password,
-        user_permissions=user_permissions,
-        queue_name=queue_name,
-        queue_comment=queue_comment,
-    )
-
-    success = setup_otobo_system(
+    setup_otobo_system(
         env,
-        config,
-        echo=typer.echo,
-        echo_error=lambda message: typer.echo(message, err=True),
+        SetupConfig(
+            webservice_name=webservice_name,
+            webservice_description="Webservice created by Otobo/Znuny Python Client CLI",
+            enabled_operations=enabled_operations,
+            user_to_add=user,
+            user_users_permissions=user_users_permissions,
+            _webservice_restricted_user=webservice_restricted_user,
+            _restrict_webservice=webservice_restricted_user is not None,
+        )
     )
-
-    if not success:
-        raise typer.Exit(code=1)
 
 
 def run() -> None:

@@ -1,9 +1,25 @@
 from __future__ import annotations
 
-from pathlib import Path
+import logging
+from typing import TYPE_CHECKING
 
-from .command_models import ArgsBuilder, CmdResult, OTOBO_COMMANDS, Permission
+from zxcvbn import zxcvbn
+
+from .command_models import ArgsBuilder, CmdResult, OTOBO_COMMANDS, Permission, PasswordToWeak
 from .otobo_command_runner import OtoboCommandRunner
+
+if TYPE_CHECKING:
+    from ..models.base_models import UserModel, GroupConfig, QueueConfig
+logger = logging.getLogger(__name__)
+
+PERMISSION_MAP = {
+    "owner": "owner",
+    "move": "move_into",
+    "priority": "priority",
+    "create": "create",
+    "read": "ro",
+    "full": "rw",
+}
 
 
 class OtoboConsole:
@@ -18,38 +34,45 @@ class OtoboConsole:
                 .flag("--quiet", enabled=self.quiet_default if quiet is None else quiet)
                 )
 
+    def is_strong_password(self, password: str) -> bool:
+        password_strength = zxcvbn(password)
+        return password_strength['guesses_log10'] >= 9
+
     def add_user(
             self,
-            user_name: str,
-            first_name: str,
-            last_name: str,
-            email_address: str,
-            password: str | None = None,
-            groups: list[str] | None = None,
+            user: UserModel,
             quiet: bool | None = None,
             no_ansi: bool | None = None,
     ) -> CmdResult:
+        logger.info(f"Adding user: {user.user_name} ({user.email})")
+        if not self.is_strong_password(user.password):
+            logger.warning(
+                f"The provided password for user '{user.user_name}' is weak. ")
+            return PasswordToWeak()
         return self.runner.run(
             OTOBO_COMMANDS["AddUser"],
             (self._common(quiet, no_ansi)
-             .opt("--user-name", user_name)
-             .opt("--first-name", first_name)
-             .opt("--last-name", last_name)
-             .opt("--email-address", email_address)
-             .opt_if("--password", password)
-             .repeat_if("--group", groups)
+             .opt("--user-name", user.user_name)
+             .opt("--first-name", user.first_name)
+             .opt("--last-name", user.last_name)
+             .opt("--email-address", user.email)
+             .opt_if("--password", user.password)
+             .repeat_if("--group", user.groups)
              ).to_list(),
         )
 
-    def add_group(self, name: str,
-                  comment: str | None = None,
-                  quiet: bool | None = None,
-                  no_ansi: bool | None = None) -> CmdResult:
+    def add_group(
+            self,
+            group: GroupConfig,
+            quiet: bool | None = None,
+            no_ansi: bool | None = None
+    ) -> CmdResult:
+        logger.info(f"Adding group: {group.name}")
         return self.runner.run(
             OTOBO_COMMANDS["AddGroup"], (
                 self._common(quiet, no_ansi)
-                .opt("--name", name)
-                .opt_if("--comment", comment)
+                .opt("--name", group.name)
+                .opt_if("--comment", group.comment)
             ).to_list(),
         )
 
@@ -61,6 +84,7 @@ class OtoboConsole:
             quiet: bool | None = None,
             no_ansi: bool | None = None,
     ) -> CmdResult:
+        logger.info(f"Linking user '{user_name}' to group '{group_name}' with permission '{permission}'")
         return self.runner.run(
             OTOBO_COMMANDS["LinkUserToGroup"],
             (self._common(quiet, no_ansi)
@@ -70,48 +94,88 @@ class OtoboConsole:
              ).to_list(),
         )
 
-    def add_queue(
+    def link_user_to_group_with_permissions(
             self,
-            name: str,
-            group: str,
-            system_address_id: int | None = None,
-            system_address_name: str | None = None,
-            comment: str | None = None,
-            unlock_timeout: int | None = None,
-            first_response_time: int | None = None,
-            update_time: int | None = None,
-            solution_time: int | None = None,
-            calendar: int | None = None,
+            user_name: str,
+            group_name: str,
+            permissions: list[Permission],
             quiet: bool | None = None,
             no_ansi: bool | None = None,
     ) -> CmdResult:
+        """
+        Link a user to a group with multiple permissions.
+
+        Args:
+            user_name: Username to link
+            group_name: Group name to link to
+            permissions: List of permissions (can use friendly names like 'read', 'full', etc.)
+            quiet: Suppress output
+            no_ansi: Disable ANSI colors
+
+        Returns:
+            Dictionary mapping permission to CmdResult
+        """
+        logger.info(f"Linking user '{user_name}' to group '{group_name}' with permissions: {permissions}")
+        results = []
+        for permission in permissions:
+            mapped_permission = PERMISSION_MAP.get(permission, permission)
+            result = self.link_user_to_group(user_name, group_name, mapped_permission, quiet, no_ansi)
+            results.append(result)
+        return CmdResult.union(results)
+
+    def add_queue(
+            self,
+            queue: QueueConfig,
+            quiet: bool | None = None,
+            no_ansi: bool | None = None,
+    ) -> CmdResult:
+        logger.info(f"Adding queue: {queue.name} (group: {queue.group})")
+
         return self.runner.run(
             OTOBO_COMMANDS["AddQueue"],
             (self._common(quiet, no_ansi)
-             .opt("--name", name)
-             .opt("--group", group)
-             .opt_if("--system-address-id", system_address_id)
-             .opt_if("--system-address-name", system_address_name)
-             .opt_if("--comment", comment)
-             .opt_if("--unlock-timeout", unlock_timeout)
-             .opt_if("--first-response-time", first_response_time)
-             .opt_if("--update-time", update_time)
-             .opt_if("--solution-time", solution_time)
-             .opt_if("--calendar", calendar)
+             .opt("--name", queue.name)
+             .opt("--group", queue.group)
+             .opt_if("--system-address-id", queue.system_address_id)
+             .opt_if("--system-address-name", queue.system_address_name)
+             .opt_if("--comment", queue.comment)
+             .opt_if("--unlock-timeout", queue.unlock_timeout)
+             .opt_if("--first-response-time", queue.first_response_time)
+             .opt_if("--update-time", queue.update_time)
+             .opt_if("--solution-time", queue.solution_time)
+             .opt_if("--calendar", queue.calendar)
              ).to_list(),
         )
 
     def add_webservice(
             self,
             name: str,
-            source_path: str | Path,
+            source_path: str,
             quiet: bool | None = None,
             no_ansi: bool | None = None,
     ) -> CmdResult:
+        logger.info(f"Adding webservice: {name} from {source_path}")
         return self.runner.run(
             OTOBO_COMMANDS["AddWebservice"],
             (self._common(quiet, no_ansi)
              .opt("--name", name)
-             .opt("--source-path", Path(source_path))
+             .opt("--source-path", source_path)
              ).to_list(),
+        )
+
+    def list_all_queues(
+            self,
+            quiet: bool | None = None,
+            no_ansi: bool | None = None,
+    ) -> CmdResult:
+        """
+        List all queues in the OTOBO/Znuny system.
+
+        Returns:
+            CmdResult with queue list in the output
+        """
+        logger.info("Listing all queues")
+        return self.runner.run(
+            OTOBO_COMMANDS["ListQueues"],
+            self._common(quiet, no_ansi).to_list(),
         )

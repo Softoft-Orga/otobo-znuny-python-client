@@ -23,6 +23,8 @@ Requires-Dist: python-dotenv>=1.0.1
 Requires-Dist: pyyaml>=6.0.2
 Requires-Dist: requests<3,>=2.28
 Requires-Dist: typer<0.20,>=0.13.1
+Requires-Dist: zxcvbn>=4.5.0
+Requires-Dist: email-validator>=2.0.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.3.5; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.24.0; extra == "dev"
@@ -36,7 +38,8 @@ Requires-Dist: mkdocs-material<10.0,>=9.5.24; extra == "docs"
 
 # Python OTOBO Client Library
 
-An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx` and `pydantic` for
+An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx`
+and `pydantic` for
 type safety
 and ease of use.
 
@@ -52,8 +55,8 @@ uv run --group docs mkdocs serve
 
 The published sections include:
 
-- [Getting started (English)](docs/getting-started.en.md)
-- [Einstieg (Deutsch)](docs/getting-started.de.md)
+- [Getting started (English)](docs/getting-started.md)
+- [Library overview](docs/library-overview.md)
 
 ## Features
 

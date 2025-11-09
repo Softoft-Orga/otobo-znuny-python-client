@@ -12,15 +12,44 @@ OTOBO_COMMANDS = {
     "AddQueue": "Admin::Queue::Add",
     "AddWebservice": "Admin::WebService::Add",
     "LinkUserToGroup": "Admin::Group::UserLink",
+    "ListQueues": "Admin::Queue::List",
 }
+
+PASSWORD_TO_WEAK_CODE = 2
 
 
 @dataclass
 class CmdResult:
-    ok: bool
-    code: int
-    out: str
-    err: str
+    code: int = 0
+    out: str = ""
+    err: str = ""
+
+    def __eq__(self, o: CmdResult) -> bool:
+        return isinstance(o, CmdResult) and self.code == o.code
+
+    @property
+    def ok(self):
+        return self.code == 0
+
+    @classmethod
+    def union(cls, results: list[CmdResult]) -> CmdResult:
+        combined_out = "\n".join(r.out for r in results if r.out)
+        combined_err = "\n".join(r.err for r in results if r.err)
+        combined_code = max(r.code for r in results)
+        return CmdResult(
+            code=combined_code,
+            out=combined_out,
+            err=combined_err,
+        )
+
+
+class PasswordToWeak(CmdResult):
+    def __init__(self) -> None:
+        super().__init__(
+            code=PASSWORD_TO_WEAK_CODE,
+            out="",
+            err="Password is too weak.",
+        )
 
 
 class ArgsBuilder:

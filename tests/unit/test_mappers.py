@@ -23,7 +23,7 @@ from otobo_znuny_python_client.models.request_models import (
     WsTicketUpdateRequest,
 )
 from otobo_znuny_python_client.models.ticket_models import (
-    WsArticleDetail,
+    WsArticle,
     WsDynamicField,
     WsTicketBase,
     WsTicketOutput,
@@ -133,7 +133,7 @@ def test_build_ticket_search_request_idname_lists() -> None:
 
 @pytest.mark.unit
 def test_parse_ticket_detail_output_handles_single_and_list_article() -> None:
-    art = WsArticleDetail(Subject="S1", Body="B1", ContentType="text/plain")
+    art = WsArticle(Subject="S1", Body="B1", ContentType="text/plain")
     wire_single = WsTicketOutput(
         Title="A",
         TicketID=1,
@@ -148,7 +148,7 @@ def test_parse_ticket_detail_output_handles_single_and_list_article() -> None:
         Title="A",
         TicketID=2,
         TicketNumber="N2",
-        Article=[art, WsArticleDetail(Subject="S2", Body="B2", ContentType="text/plain")],
+        Article=[art, WsArticle(Subject="S2", Body="B2", ContentType="text/plain")],
         DynamicField=[],
     )
     d2 = from_ws_ticket_detail(wire_list)

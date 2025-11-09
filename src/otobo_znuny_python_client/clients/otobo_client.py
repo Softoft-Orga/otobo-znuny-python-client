@@ -139,7 +139,7 @@ class OTOBOZnunyClient:
             TicketOperation.GET,
             WsTicketGetResponse,
             data=WsTicketGetRequest().model_dump(exclude_none=True, by_alias=True),
-            url_params={"TicketID": ticket_id},
+            url_params={"TicketID": int(ticket_id)},
         )
         tickets = response.Ticket or []
         if len(tickets) != 1:
@@ -148,13 +148,14 @@ class OTOBOZnunyClient:
             tickets[0],
         )
 
-    async def update_ticket(self, ticket: TicketUpdate) -> Ticket:
+    async def update_ticket(self, ticket_id: int | str, ticket: TicketUpdate) -> Ticket:
         request = to_ws_ticket_update(ticket)
         response: WsTicketResponse = await self._send(
             HTTPMethod.PUT,
             TicketOperation.UPDATE,
             WsTicketResponse,
             data=request.model_dump(exclude_none=True, by_alias=True),
+            url_params={"TicketID": int(ticket_id)},
         )
         if response.Ticket is None:
             raise RuntimeError("update returned no Ticket")

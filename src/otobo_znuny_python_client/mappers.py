@@ -15,16 +15,14 @@ from otobo_znuny_python_client.domain_models.ticket_models import (
     TicketSearch,
     TicketUpdate,
 )
-from otobo_znuny_python_client.models.base_models import BooleanInteger
 from otobo_znuny_python_client.models.request_models import (
     WsAuthData,
-    WsDynamicFieldFilter,
     WsTicketMutationRequest,
     WsTicketSearchRequest,
     WsTicketUpdateRequest,
 )
 from otobo_znuny_python_client.models.ticket_models import (
-    WsArticleDetail,
+    WsArticle,
     WsDynamicField,
     WsTicketBase,
     WsTicketOutput,
@@ -46,6 +44,10 @@ def try_parsing_datetime(value: str | None) -> datetime | None:
     return None
 
 
+def format_datetime(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def to_ws_dynamic_field_items(dynamic_fields: dict[str, str]) -> list[WsDynamicField]:
     return [WsDynamicField(Name=key, Value=value) for key, value in dynamic_fields.items()]
 
@@ -62,44 +64,8 @@ def _to_str_list(values: list[Any]) -> list[str]:
     return [str(v) for v in values]
 
 
-def to_ws_dynamic_field_search(filter_model: DynamicFieldFilter) -> WsDynamicFieldFilter:
-    has_value_constraint = any(
-        [
-            filter_model.equals is not None,
-            filter_model.like is not None,
-            filter_model.greater is not None,
-            filter_model.smaller is not None,
-        ],
-    )
-
-    if filter_model.empty is True:
-        empty_flag: BooleanInteger = 1
-    elif filter_model.empty is False:
-        empty_flag = 0
-    else:
-        empty_flag = 0 if has_value_constraint else 1
-
-    equals_value: str | list[str] | None = None
-    if isinstance(filter_model.equals, list):
-        equals_value = _to_str_list(filter_model.equals)
-    elif filter_model.equals is not None:
-        equals_value = _to_str(filter_model.equals)
-
-    like_value = filter_model.like
-    greater_value = _to_str(filter_model.greater) if filter_model.greater is not None else None
-    smaller_value = _to_str(filter_model.smaller) if filter_model.smaller is not None else None
-
-    return WsDynamicFieldFilter(
-        Empty=empty_flag,
-        Equals=equals_value,
-        Like=like_value,
-        GreaterThan=greater_value,
-        SmallerThan=smaller_value,
-    )
-
-
-def to_ws_article(article: Article) -> WsArticleDetail:
-    return WsArticleDetail(
+def to_ws_article(article: Article) -> WsArticle:
+    return WsArticle(
         From=article.from_addr,
         To=article.to_addr,
         Subject=article.subject,
@@ -108,7 +74,7 @@ def to_ws_article(article: Article) -> WsArticleDetail:
     )
 
 
-def from_ws_article(article_otobo: WsArticleDetail) -> Article:
+def from_ws_article(article_otobo: WsArticle) -> Article:
     return Article(
         from_addr=article_otobo.From,
         to_addr=article_otobo.To,

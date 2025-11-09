@@ -25,8 +25,6 @@ services:
       - ALL
     depends_on:
       - db
-      - elastic
-      - redis
     restart: always
     logging:
       driver: "local"
@@ -59,22 +57,6 @@ services:
     healthcheck:
       test: ./bin/otobo.Daemon.pl status | grep 'Daemon running'
 
-  elastic:
-    image: ${OTOBO_IMAGE_OTOBO_ELASTICSEARCH:-rotheross/otobo-elasticsearch:latest-11_0}
-    restart: always
-    logging:
-      driver: "local"
-      options:
-        max-file: "5"
-        max-size: "10m"
-    environment:
-      discovery.type: single-node
-      ES_JAVA_OPTS: ${OTOBO_ELASTICSEARCH_ES_JAVA_OPTS:?err}
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: curl -s -f http://localhost:9200/_cat/health
-
   redis:
     image: ${OTOBO_IMAGE_REDIS:-redis:6.0-alpine}
     user: redis:redis
@@ -88,9 +70,17 @@ services:
       - redis_data:/data
     healthcheck:
       test: redis-cli ping
-
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - ":9443"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 volumes:
   mariadb_data: { }
   opt_otobo: { }
   elasticsearch_data: { }
   redis_data: { }
+  portainer_data: { }

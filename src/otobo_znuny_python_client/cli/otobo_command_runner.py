@@ -24,7 +24,7 @@ class OtoboCommandRunner:
     def run(self, operation: str, args: list[str]) -> CmdResult:
         cmd = [*self.prefix, self.executable, operation, *args]
         proc = subprocess.run(cmd, capture_output=True, text=True)
-        cmd_result = CmdResult(proc.returncode == 0, proc.returncode, proc.stdout.strip(), proc.stderr.strip())
+        cmd_result = CmdResult(proc.returncode, proc.stdout.strip(), proc.stderr.strip())
         if self.log_commands:
             pass
         return cmd_result

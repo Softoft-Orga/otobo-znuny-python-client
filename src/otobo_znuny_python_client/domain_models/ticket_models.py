@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
@@ -65,7 +65,6 @@ class TicketCreate(TicketBase):
 
 
 class TicketUpdate(TicketBase):
-    id: int | None = None
     article: Article | None = None
 
     def get_articles(self) -> list[Article]:
@@ -80,23 +79,7 @@ class Ticket(TicketBase):
         return self.articles or []
 
 
-class DynamicFieldFilter(BaseModel):
-    field_name: str
-    equals: Any | list[Any] | None = None
-    like: str | None = None
-    greater: Any | None = None
-    smaller: Any | None = None
-
-
 class TicketSearch(BaseModel):
-    numbers: list[str] | None = None
-    titles: list[str] | None = None
-    queues: list[IdName] | None = None
-    states: list[IdName] | None = None
-    locks: list[IdName] | None = None
-    priorities: list[IdName] | None = None
-    types: list[IdName] | None = None
-    customer_users: list[str] | None = None
-    use_subqueues: bool = False
     limit: int = 50
-    dynamic_fields: list[DynamicFieldFilter] | None = None
+    changed_newer_than_datetime: datetime | None = None
+    changed_older_than_datetime: datetime | None = None

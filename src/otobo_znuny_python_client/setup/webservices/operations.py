@@ -20,7 +20,7 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
         route="/tickets/:TicketId",
         description="Retrieves ticket information by ID.",
         methods=["GET"],
-        include_ticket_data="0",
+        include_ticket_data="1",
     ),
     TicketOperation.SEARCH: OperationSpec(
         operation_name="ticket-search",
@@ -28,12 +28,12 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
         route="/tickets/search",
         description="Searches for tickets based on specified criteria.",
         methods=["POST"],
-        include_ticket_data="0",
+        include_ticket_data="1",
     ),
     TicketOperation.UPDATE: OperationSpec(
         operation_name="ticket-update",
         op=TicketOperation.UPDATE,
-        route="/ticket-update",
+        route="/tickets/:TicketId",
         description="Updates an existing ticket.",
         methods=["PUT"],
         include_ticket_data="1",

@@ -1,4 +1,3 @@
-"""Unit tests for WebserviceBuilder."""
 import tempfile
 from pathlib import Path
 
