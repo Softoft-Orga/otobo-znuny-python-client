@@ -1,0 +1,148 @@
+---
+Debugger:
+  DebugThreshold: debug
+  TestMode: '0'
+Description: Webservice for 'OpenTicketAI'. Restricted to user 'otobo_user'.
+FrameworkVersion: 11.0.13
+Provider:
+  Operation:
+    ticket-create:
+      Description: Creates a new ticket.
+      IncludeTicketData: '1'
+      MappingInbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: otobo_user
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      MappingOutbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      Type: Ticket::TicketCreate
+    ticket-get:
+      Description: Retrieves ticket information by ID.
+      IncludeTicketData: '0'
+      MappingInbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: otobo_user
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      MappingOutbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      Type: Ticket::TicketGet
+    ticket-search:
+      Description: Searches for tickets based on specified criteria.
+      IncludeTicketData: '0'
+      MappingInbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: otobo_user
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      MappingOutbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      Type: Ticket::TicketSearch
+    ticket-update:
+      Description: Updates an existing ticket.
+      IncludeTicketData: '1'
+      MappingInbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          KeyMapExact:
+            UserLogin: UserLogin
+          ValueMap:
+            UserLogin:
+              ValueMapRegEx:
+                .*: otobo_user
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      MappingOutbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Keep
+        Type: Simple
+      Type: Ticket::TicketUpdate
+  Transport:
+    Config:
+      AdditionalHeaders: ~
+      KeepAlive: ''
+      MaxLength: '1000000'
+      OutboundHeaders: {}
+      RouteOperationMapping:
+        ticket-create:
+          RequestMethod:
+          - POST
+          Route: /tickets
+        ticket-get:
+          RequestMethod:
+          - GET
+          Route: /tickets/:TicketId
+        ticket-search:
+          RequestMethod:
+          - POST
+          Route: /tickets/search
+        ticket-update:
+          RequestMethod:
+          - PUT
+          Route: /ticket-update
+    Type: HTTP::REST
+RemoteSystem: ''
+Requester:
+  Transport:
+    Type: ''

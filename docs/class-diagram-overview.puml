@@ -1,0 +1,100 @@
+@startuml OTOBO Client Architecture Overview
+
+
+title OTOBO/Znuny Python Client - Architecture Overview
+
+package "Client Layer" <<Rectangle>> {
+    class OTOBOZnunyClient {
+        + login(auth: BasicAuth)
+        + create_ticket(ticket: TicketCreate): Ticket
+        + get_ticket(ticket_id): Ticket
+        + update_ticket(ticket: TicketUpdate): Ticket
+        + search_tickets(search: TicketSearch): list[int]
+        + search_and_get(search: TicketSearch): list[Ticket]
+    }
+}
+
+package "Domain Models" <<Rectangle>> {
+    class BasicAuth {
+        + user_login: str
+        + password: SecretStr
+    }
+
+    class ClientConfig {
+        + base_url: str
+        + webservice_name: str
+        + operation_url_map: OperationUrlMap
+    }
+
+    enum TicketOperation {
+        CREATE
+        SEARCH
+        GET
+        UPDATE
+    }
+
+    abstract class TicketBase {
+        + title: str
+        + queue: IdName
+        + state: IdName
+        + priority: IdName
+        {abstract} + get_articles(): list[Article]
+    }
+
+    class TicketCreate
+    class TicketUpdate
+    class Ticket
+
+    class Article {
+        + subject: str
+        + body: str
+        + from_addr: str
+    }
+
+    class TicketSearch {
+        + queues: list[IdName]
+        + states: list[IdName]
+        + limit: int
+    }
+}
+
+package "WebService Models" <<Rectangle>> {
+    class WsTicketGetRequest
+    class WsTicketMutationRequest
+    class WsTicketSearchRequest
+
+    class WsTicketResponse
+    class WsTicketGetResponse
+    class WsTicketSearchResponse
+}
+
+' Key inheritance relationships
+TicketBase <|-- TicketCreate
+TicketBase <|-- TicketUpdate
+TicketBase <|-- Ticket
+
+' Client dependencies
+OTOBOZnunyClient --> ClientConfig : configured by
+OTOBOZnunyClient --> BasicAuth : authenticates with
+OTOBOZnunyClient --> TicketOperation : uses
+
+' Domain model usage
+OTOBOZnunyClient ..> TicketCreate : accepts
+OTOBOZnunyClient ..> TicketUpdate : accepts
+OTOBOZnunyClient ..> TicketSearch : accepts
+OTOBOZnunyClient ..> Ticket : returns
+
+TicketBase o-- Article : contains
+TicketSearch o-- "IdName" : filters by
+
+' WebService interaction
+OTOBOZnunyClient ..> WsTicketGetRequest : sends
+OTOBOZnunyClient ..> WsTicketMutationRequest : sends
+OTOBOZnunyClient ..> WsTicketSearchRequest : sends
+OTOBOZnunyClient ..> WsTicketResponse : receives
+OTOBOZnunyClient ..> WsTicketGetResponse : receives
+OTOBOZnunyClient ..> WsTicketSearchResponse : receives
+
+
+@enduml
+

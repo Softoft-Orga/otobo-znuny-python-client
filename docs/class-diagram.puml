@@ -1,0 +1,344 @@
+@startuml OTOBO Client Architecture
+
+title OTOBO/Znuny Python Client - Class Diagram
+
+package "clients" {
+    class OTOBOZnunyClient {
+        - config: ClientConfig
+        - base_url: str
+        - webservice_name: str
+        - operation_map: OperationUrlMap
+        - _web_service_url_base: str
+        - _logger: Logger
+        - _owns_client: bool
+        - _client: AsyncClient
+        - _auth: BasicAuth | None
+        - _ws_base_path: str
+
+        + __init__(config, client, web_service_url_base)
+        + login(auth: BasicAuth): void
+        + logout(): void
+        + create_ticket(ticket: TicketCreate): Ticket
+        + get_ticket(ticket_id): Ticket
+        + update_ticket(ticket: TicketUpdate): Ticket
+        + search_tickets(search: TicketSearch): list[int]
+        + search_and_get(search: TicketSearch): list[Ticket]
+        + aclose(): void
+        - _build_url(endpoint_url, url_params): str
+        - _extract_error(payload): OTOBOError | None
+        - _send(method, operation, response_model, data, url_params): T
+    }
+}
+
+package "domain_models" {
+    class BasicAuth {
+        + user_login: str
+        + password: SecretStr
+    }
+
+    class ClientConfig {
+        + base_url: str
+        + webservice_name: str
+        + operation_url_map: OperationUrlMap
+    }
+
+    enum TicketOperation {
+        CREATE
+        SEARCH
+        GET
+        UPDATE
+
+        + operation_type: str
+        + value: str
+        + type: str
+    }
+
+    class IdName {
+        + id: int | None
+        + name: str | None
+
+        - _normalize_name(v): str | None
+        - _require_one(): Self
+    }
+
+    abstract class TicketBase {
+        + number: str | None
+        + title: str | None
+        + lock: IdName | None
+        + queue: IdName | None
+        + state: IdName | None
+        + priority: IdName | None
+        + type: IdName | None
+        + owner: IdName | None
+        + customer_id: str | None
+        + customer_user: str | None
+        + created_at: datetime | None
+        + changed_at: datetime | None
+        + dynamic_fields: dict[str, str]
+
+        {abstract} + get_articles(): list[Article]
+    }
+
+    class Article {
+        + from_addr: str | None
+        + to_addr: str | None
+        + subject: str | None
+        + body: str | None
+        + content_type: str | None
+        + created_at: datetime | None
+        + changed_at: datetime | None
+        + article_id: int | None
+        + article_number: int | None
+    }
+
+    class TicketCreate {
+        + article: Article | None
+
+        + get_articles(): list[Article]
+    }
+
+    class TicketUpdate {
+        + id: int | None
+        + article: Article | None
+
+        + get_articles(): list[Article]
+    }
+
+    class Ticket {
+        + id: int
+        + articles: list[Article]
+
+        + get_articles(): list[Article]
+    }
+
+    class DynamicFieldFilter {
+        + field_name: str
+        + equals: Any | list[Any] | None
+        + like: str | None
+        + greater: Any | None
+        + smaller: Any | None
+    }
+
+    class TicketSearch {
+        + numbers: list[str] | None
+        + titles: list[str] | None
+        + queues: list[IdName] | None
+        + states: list[IdName] | None
+        + locks: list[IdName] | None
+        + priorities: list[IdName] | None
+        + types: list[IdName] | None
+        + customer_users: list[str] | None
+        + use_subqueues: bool
+        + limit: int
+        + dynamic_fields: list[DynamicFieldFilter] | None
+    }
+}
+
+package "models" {
+    package "request_models" {
+        class WsAuthData {
+            + UserLogin: str
+            + Password: SecretStr
+        }
+
+        class WsDynamicFieldFilter {
+            + Empty: BooleanInteger
+            + Equals: str | None
+            + Like: str | None
+            + GreaterThan: str | None
+            + GreaterThanEquals: str | None
+            + SmallerThan: str | None
+            + SmallerThanEquals: str | None
+        }
+
+        class WsTicketSearchRequest {
+            + TicketNumber: str | list[str] | None
+            + Title: str | list[str] | None
+            + Locks: list[str] | None
+            + LockIDs: list[int] | None
+            + Queues: list[str] | None
+            + QueueIDs: list[int] | None
+            + UseSubQueues: bool | None
+            + Types: list[str] | None
+            + TypeIDs: list[int] | None
+            + States: list[str] | None
+            + StateIDs: list[int] | None
+            + Priorities: list[str] | None
+            + PriorityIDs: list[int] | None
+            + Limit: int
+            + SearchLimit: int
+            + DynamicFields: dict[str, WsDynamicFieldFilter]
+
+            - _serialize(serializer): dict
+        }
+
+        class WsTicketGetRequest {
+            + DynamicFields: BooleanInteger
+            + Extended: BooleanInteger
+            + AllArticles: BooleanInteger
+            + ArticleSenderType: list[str] | None
+            + ArticleOrder: Literal["ASC", "DESC"]
+            + ArticleLimit: int
+            + Attachments: BooleanInteger
+            + GetAttachmentContents: BooleanInteger
+            + HTMLBodyAsAttachment: BooleanInteger
+        }
+
+        class WsTicketMutationRequest {
+            + Ticket: WsTicketBase | None
+            + Article: WsArticleDetail | None
+            + DynamicField: list[WsDynamicField] | None
+        }
+
+        class WsTicketUpdateRequest {
+            + TicketID: int | None
+            + TicketNumber: str | None
+        }
+    }
+
+    package "response_models" {
+        class WsTicketResponse {
+            + Ticket: WsTicketOutput | None
+        }
+
+        class WsTicketGetResponse {
+            + Ticket: list[WsTicketOutput]
+        }
+
+        class WsTicketSearchResponse {
+            + TicketID: list[int] | None
+        }
+    }
+
+    package "ticket_models" {
+        class WsTicketBase {
+            + Title: str | None
+            + Lock: str | None
+            + LockID: int | None
+            + QueueID: int | None
+            + Queue: str | None
+            + StateID: int | None
+            + State: str | None
+            + PriorityID: int | None
+            + Priority: str | None
+            + OwnerID: int | None
+            + Owner: str | None
+            + CustomerUser: str | None
+            + TicketID: int | None
+            + TicketNumber: str | None
+            + Type: str | None
+            + TypeID: int | None
+            + CustomerID: str | None
+            + CustomerUserID: str | None
+            + CreateBy: int | None
+            + ChangeBy: int | None
+            + Created: str | None
+            + Changed: str | None
+        }
+
+        class WsDynamicField {
+            + Name: str
+            + Value: str | None
+        }
+
+        class WsArticleDetail {
+            + ArticleID: int | None
+            + ArticleNumber: int | None
+            + From: str | None
+            + Subject: str | None
+            + Body: str | None
+            + ContentType: str | None
+            + CreateTime: str | None
+            + ChangeTime: str | None
+            + To: str | None
+            + MessageID: str | None
+            + ChangeBy: int | None
+            + CreateBy: int | None
+        }
+
+        class WsTicketOutput {
+            + Article: list[WsArticleDetail] | WsArticleDetail | None
+            + DynamicField: list[WsDynamicField] | None
+
+            + get_articles(): list[WsArticleDetail]
+        }
+    }
+}
+
+package "util" {
+    class SafeBaseModel {
+        + model_dump(*args, with_secrets, **kwargs): dict
+    }
+
+    class OTOBOError {
+        + code: str
+        + message: str
+    }
+}
+
+' Inheritance relationships
+TicketBase <|-- TicketCreate
+TicketBase <|-- TicketUpdate
+TicketBase <|-- Ticket
+SafeBaseModel <|-- BasicAuth
+SafeBaseModel <|-- WsAuthData
+WsTicketBase <|-- WsTicketOutput
+WsTicketMutationRequest <|-- WsTicketUpdateRequest
+
+' Composition relationships
+OTOBOZnunyClient *-- ClientConfig : uses
+OTOBOZnunyClient *-- BasicAuth : authenticates with
+OTOBOZnunyClient ..> TicketOperation : uses
+OTOBOZnunyClient ..> TicketCreate : creates
+OTOBOZnunyClient ..> TicketUpdate : updates
+OTOBOZnunyClient ..> TicketSearch : searches
+OTOBOZnunyClient ..> Ticket : returns
+OTOBOZnunyClient ..> WsTicketGetRequest : sends
+OTOBOZnunyClient ..> WsTicketMutationRequest : sends
+OTOBOZnunyClient ..> WsTicketResponse : receives
+OTOBOZnunyClient ..> WsTicketGetResponse : receives
+OTOBOZnunyClient ..> WsTicketSearchResponse : receives
+
+ClientConfig *-- TicketOperation : maps operations
+
+TicketBase *-- IdName : contains
+TicketCreate *-- Article : contains
+TicketUpdate *-- Article : contains
+Ticket *-- Article : contains
+TicketSearch *-- IdName : filters by
+TicketSearch *-- DynamicFieldFilter : filters by
+
+WsTicketSearchRequest *-- WsDynamicFieldFilter : contains
+WsTicketMutationRequest *-- WsTicketBase : contains
+WsTicketMutationRequest *-- WsArticleDetail : contains
+WsTicketMutationRequest *-- WsDynamicField : contains
+WsTicketOutput *-- WsArticleDetail : contains
+WsTicketOutput *-- WsDynamicField : contains
+
+WsTicketResponse *-- WsTicketOutput : contains
+WsTicketGetResponse *-- WsTicketOutput : contains
+
+note right of OTOBOZnunyClient
+  Main client class that handles
+  all interactions with OTOBO/Znuny
+  webservices via async HTTP
+end note
+
+note right of TicketOperation
+  Enum defining available
+  ticket operations and their
+  corresponding OTOBO endpoints
+end note
+
+note bottom of TicketBase
+  Abstract base class for all
+  domain ticket models
+end note
+
+note bottom of WsTicketBase
+  Base class for webservice
+  ticket request/response models
+end note
+
+@enduml
+
