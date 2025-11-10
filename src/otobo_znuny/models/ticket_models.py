@@ -1,6 +1,5 @@
-from typing import List, Optional, Union
-
 from pydantic import BaseModel
+from typing import List, Optional, Union
 
 
 class WsTicketBase(BaseModel):
@@ -39,7 +38,7 @@ class WsArticleDetail(BaseModel):
     From: Optional[str] = None
     Subject: Optional[str] = None
     Body: Optional[str] = None
-    ContentType: Optional[str] = None
+    ContentType: Optional[str] = "text/plain; charset=utf-8"
     CreateTime: Optional[str] = None
     ChangeTime: Optional[str] = None
     To: Optional[str] = None

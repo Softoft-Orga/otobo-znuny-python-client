@@ -1,8 +1,7 @@
 from abc import abstractmethod, ABC
 from datetime import datetime
-from typing import Any, Optional, Self, Union
-
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from typing import Any, Optional, Self, Union
 
 
 class IdName(BaseModel):
@@ -30,7 +29,7 @@ class Article(BaseModel):
     to_addr: Optional[str] = None
     subject: Optional[str] = None
     body: Optional[str] = None
-    content_type: Optional[str] = None
+    content_type: Optional[str] = "text/plain; charset=utf-8"
     created_at: Optional[datetime] = None
     changed_at: Optional[datetime] = None
     article_id: Optional[int] = None
