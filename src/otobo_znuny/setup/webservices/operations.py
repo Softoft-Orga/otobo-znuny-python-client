@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from otobo_znuny.setup.webservices.webservice_models import OperationSpec
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.webservices.webservice_models import OperationSpec
 
 SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
     TicketOperation.CREATE: OperationSpec(
         operation_name="ticket-create",
         op=TicketOperation.CREATE,
-        route="/tickets",
+        route="/ticket-create",
         description="Creates a new ticket.",
         methods=["POST"],
         include_ticket_data="1",
@@ -17,7 +17,7 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
     TicketOperation.GET: OperationSpec(
         operation_name="ticket-get",
         op=TicketOperation.GET,
-        route="/tickets/:TicketId",
+        route="/ticket-get",
         description="Retrieves ticket information by ID.",
         methods=["GET"],
         include_ticket_data="1",
@@ -25,7 +25,7 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
     TicketOperation.SEARCH: OperationSpec(
         operation_name="ticket-search",
         op=TicketOperation.SEARCH,
-        route="/tickets/search",
+        route="/ticket-search",
         description="Searches for tickets based on specified criteria.",
         methods=["POST"],
         include_ticket_data="1",
@@ -33,7 +33,7 @@ SUPPORTED_OPERATION_SPECS: dict[TicketOperation, OperationSpec] = {
     TicketOperation.UPDATE: OperationSpec(
         operation_name="ticket-update",
         op=TicketOperation.UPDATE,
-        route="/tickets/:TicketId",
+        route="/ticket-update",
         description="Updates an existing ticket.",
         methods=["PUT"],
         include_ticket_data="1",

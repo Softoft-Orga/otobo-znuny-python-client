@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from otobo_znuny.setup import WebserviceBuilder
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.webservices.builder import WebserviceBuilder
 
 
 def test_builder_with_all_operations():

@@ -1,11 +1,9 @@
 from typing import TypeAlias
-
 from pydantic import BaseModel
 
-from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 
 OperationUrlMap: TypeAlias = dict[TicketOperation, str]
-
 
 class ClientConfig(BaseModel):
     base_url: str

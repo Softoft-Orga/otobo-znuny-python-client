@@ -4,30 +4,12 @@ from datetime import datetime
 
 import pytest
 
-from otobo_znuny_python_client.domain_models.ticket_models import (
-    Article,
-    IdName,
-    TicketCreate,
-    TicketSearch,
-    TicketUpdate,
-)
-from otobo_znuny_python_client.mappers import (
-    from_ws_ticket_detail,
-    to_ws_ticket_create,
-    to_ws_ticket_search,
-    to_ws_ticket_update,
-)
-from otobo_znuny_python_client.models.request_models import (
-    WsTicketMutationRequest,
-    WsTicketSearchRequest,
-    WsTicketUpdateRequest,
-)
-from otobo_znuny_python_client.models.ticket_models import (
-    WsArticle,
-    WsDynamicField,
-    WsTicketBase,
-    WsTicketOutput,
-)
+from otobo_znuny.domain_models.ticket_models import IdName, TicketSearch, Article, TicketCreate, TicketUpdate
+from otobo_znuny.mappers import to_ws_ticket_create, from_ws_ticket_detail, to_ws_ticket_update, to_ws_ticket_search, \
+    to_ws_ticket_get
+from otobo_znuny.models.request_models import WsTicketMutationRequest, WsTicketUpdateRequest, WsTicketSearchRequest, \
+    WsTicketGetRequest
+from otobo_znuny.models.ticket_models import WsTicketBase, WsDynamicField, WsTicketOutput, WsArticleDetail
 
 
 @pytest.mark.unit
@@ -53,6 +35,7 @@ def test_build_ticket_create_request_roundtrip() -> None:
     assert req_ticket.Type == "Unclassified"
     assert req_ticket.CustomerUser == "user1"
     articles = req.Article if isinstance(req.Article, list) else [req.Article] if req.Article else []
+    print(articles)
     assert articles[0].Subject == "S"
     assert articles[0].Body == "B"
     wire = WsTicketOutput(
@@ -132,8 +115,15 @@ def test_build_ticket_search_request_idname_lists() -> None:
 
 
 @pytest.mark.unit
+def test_build_ticket_get_request_by_id_and_number() -> None:
+    r1 = to_ws_ticket_get(ticket_id=7)
+    assert isinstance(r1, WsTicketGetRequest)
+    assert r1.TicketID == 7
+
+
+@pytest.mark.unit
 def test_parse_ticket_detail_output_handles_single_and_list_article() -> None:
-    art = WsArticle(Subject="S1", Body="B1", ContentType="text/plain")
+    art = WsArticleDetail(Subject="S1", Body="B1", ContentType="text/plain")
     wire_single = WsTicketOutput(
         Title="A",
         TicketID=1,
@@ -148,7 +138,7 @@ def test_parse_ticket_detail_output_handles_single_and_list_article() -> None:
         Title="A",
         TicketID=2,
         TicketNumber="N2",
-        Article=[art, WsArticle(Subject="S2", Body="B2", ContentType="text/plain")],
+        Article=[art, WsArticleDetail(Subject="S2", Body="B2", ContentType="text/plain")],
         DynamicField=[],
     )
     d2 = from_ws_ticket_detail(wire_list)

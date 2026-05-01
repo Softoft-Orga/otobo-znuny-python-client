@@ -5,17 +5,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from otobo_znuny_python_client.clients.otobo_client import OTOBOZnunyClient
-from otobo_znuny_python_client.domain_models.basic_auth_model import BasicAuth
-from otobo_znuny_python_client.domain_models.otobo_client_config import ClientConfig
-from otobo_znuny_python_client.domain_models.ticket_models import (
+from otobo_znuny.clients.otobo_client import OTOBOZnunyClient
+from otobo_znuny.domain_models.basic_auth_model import BasicAuth
+from otobo_znuny.domain_models.otobo_client_config import ClientConfig
+from otobo_znuny.domain_models.ticket_models import (
     Article,
     IdName,
     TicketCreate,
     TicketSearch,
     TicketUpdate,
 )
-from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 
 
 @pytest.fixture
@@ -96,12 +96,9 @@ async def test_create_ticket_complete_flow(client: OTOBOZnunyClient) -> None:
     assert result.id == 123
     assert result.number == "2025010212300001"
     assert result.title == "Test Ticket"
-    assert result.queue
-    assert result.queue.name == "Raw"
-    assert result.state
-    assert result.state.name == "new"
-    assert result.priority
-    assert result.priority.name == "3 normal"
+    assert result.queue and result.queue.name == "Raw"
+    assert result.state and result.state.name == "new"
+    assert result.priority and result.priority.name == "3 normal"
 
 
 @pytest.mark.unit
@@ -121,8 +118,8 @@ async def test_get_ticket_by_id(client: OTOBOZnunyClient) -> None:
                 "StateID": "4",
                 "Priority": "4 high",
                 "PriorityID": "4",
-            },
-        ],
+            }
+        ]
     }
 
     mock_response = AsyncMock()
@@ -135,10 +132,8 @@ async def test_get_ticket_by_id(client: OTOBOZnunyClient) -> None:
 
     assert result.id == 456
     assert result.title == "Retrieved Ticket"
-    assert result.queue
-    assert result.queue.name == "Support"
-    assert result.priority
-    assert result.priority.name == "4 high"
+    assert result.queue and result.queue.name == "Support"
+    assert result.priority and result.priority.name == "4 high"
 
 
 @pytest.mark.unit
@@ -171,8 +166,7 @@ async def test_update_ticket_title_and_priority(client: OTOBOZnunyClient) -> Non
 
     assert result.id == 789
     assert result.title == "Updated Title"
-    assert result.priority
-    assert result.priority.name == "5 very high"
+    assert result.priority and result.priority.name == "5 very high"
 
 
 @pytest.mark.unit
@@ -301,7 +295,7 @@ async def test_search_and_get_tickets(client: OTOBOZnunyClient) -> None:
     get_response_2.status_code = 200
 
     client._client.request = AsyncMock(  # type: ignore
-        side_effect=[search_response, get_response_1, get_response_2],
+        side_effect=[search_response, get_response_1, get_response_2]
     )
 
     search = TicketSearch(queues=[IdName(name="Raw")])

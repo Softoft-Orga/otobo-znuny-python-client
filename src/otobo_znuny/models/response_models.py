@@ -1,10 +1,11 @@
+from typing import Optional
 from pydantic import BaseModel
 
-from otobo_znuny_python_client.models.ticket_models import WsTicketOutput
+from otobo_znuny.models.ticket_models import WsTicketOutput
 
 
 class WsTicketResponse(BaseModel):
-    Ticket: WsTicketOutput | None = None
+    Ticket: Optional[WsTicketOutput] = None
 
 
 class WsTicketGetResponse(BaseModel):
@@ -12,4 +13,4 @@ class WsTicketGetResponse(BaseModel):
 
 
 class WsTicketSearchResponse(BaseModel):
-    TicketID: list[int] | None = None
+    TicketID: Optional[list[int]] = None

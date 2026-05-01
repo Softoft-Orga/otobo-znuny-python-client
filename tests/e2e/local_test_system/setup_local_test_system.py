@@ -3,11 +3,11 @@ import subprocess
 import time
 from pathlib import Path
 
-from cli.environments import detect_system
 from models import UserModel
+from otobo_znuny.cli.environments import detect_system
+from otobo_znuny.setup import SetupConfig
+from otobo_znuny.setup.bootstrap import setup_otobo_system
 from otobo_znuny_python_client import TicketOperation, OtoboConsole
-from setup.bootstrap import setup_otobo_system
-from setup.config import SetupConfig
 
 
 def run(cmd: list[str]):

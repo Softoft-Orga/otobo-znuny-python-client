@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from otobo_znuny_python_client.cli.command_models import CmdResult
+from otobo_znuny.cli.command_models import CmdResult
 
 
 class OtoboCommandRunner:

@@ -4,14 +4,14 @@ from typing import Iterable, List, Optional
 
 import typer
 
-from setup.bootstrap import setup_otobo_system
-from setup.config import SetupConfig
+from domain_models.ticket_operation import TicketOperation
+from models.base_models import UserModel, GroupConfig, QueueConfig
+from otobo_znuny.setup.bootstrap import generate_random_password
+from otobo_znuny.setup.bootstrap import setup_otobo_system
+from otobo_znuny.setup.config import SetupConfig
 from .command_models import Permission
 from .environments import detect_system, OtoboSystem
 from .otobo_console import OtoboConsole
-from ..domain_models.ticket_operation import TicketOperation
-from ..models.base_models import UserModel, GroupConfig, QueueConfig
-from ..setup.bootstrap import generate_random_password
 
 app = typer.Typer(help="Command line utilities for interacting with OTOBO/Znuny systems.")
 

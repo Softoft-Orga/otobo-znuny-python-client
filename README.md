@@ -38,7 +38,7 @@ The published sections include:
 Install from PyPI:
 
 ```bash
-pip install otobo_znuny_python_client
+pip install otobo_znuny
 ```
 
 ## License

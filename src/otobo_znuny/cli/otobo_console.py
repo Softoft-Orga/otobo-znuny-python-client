@@ -9,7 +9,7 @@ from .command_models import ArgsBuilder, CmdResult, OTOBO_COMMANDS, Permission, 
 from .otobo_command_runner import OtoboCommandRunner
 
 if TYPE_CHECKING:
-    from ..models.base_models import UserModel, GroupConfig, QueueConfig
+    from models.base_models import UserModel, GroupConfig, QueueConfig
 logger = logging.getLogger(__name__)
 
 PERMISSION_MAP = {

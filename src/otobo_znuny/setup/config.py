@@ -3,7 +3,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from models import UserModel
-from otobo_znuny_python_client import Permission, TicketOperation
+from otobo_znuny.cli.command_models import Permission
+from otobo_znuny_python_client import TicketOperation
 
 
 class SetupConfig(BaseModel):

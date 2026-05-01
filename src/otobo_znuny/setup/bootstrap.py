@@ -5,7 +5,7 @@ import string
 from pathlib import Path
 from typing import Callable
 
-from cli.environments import OtoboSystem, DockerSystem, LocalSystem
+from otobo_znuny.cli.environments import OtoboSystem, DockerSystem, LocalSystem
 from otobo_znuny_python_client import OtoboConsole
 from .config import SetupConfig
 from .webservices.builder import WebserviceBuilder

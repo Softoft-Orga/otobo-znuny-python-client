@@ -6,9 +6,9 @@ from typing import Any, Mapping
 
 import yaml
 
+from otobo_znuny.setup.webservices.operations import SUPPORTED_OPERATION_SPECS
+from otobo_znuny.setup.webservices.webservice_models import OperationSpec
 from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-from otobo_znuny_python_client.setup.webservices.operations import SUPPORTED_OPERATION_SPECS
-from otobo_znuny_python_client.setup.webservices.webservice_models import OperationSpec
 
 DEFAULT_FRAMEWORK_VERSION = "11.0.11"
 

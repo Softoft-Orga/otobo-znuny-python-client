@@ -6,11 +6,10 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-import otobo_znuny_python_client.cli.app as cli_app
-from otobo_znuny_python_client.cli.app import _resolve_operations, app
-from otobo_znuny_python_client.cli.command_models import CmdResult
-from otobo_znuny_python_client.domain_models.ticket_operation import TicketOperation
-
+import otobo_znuny.cli.app as cli_app
+from otobo_znuny.cli.app import _resolve_operations, app
+from otobo_znuny.cli.command_models import CmdResult
+from otobo_znuny.domain_models.ticket_operation import TicketOperation
 
 pytestmark = pytest.mark.unit
 
@@ -25,13 +24,13 @@ class RecordingConsole:
         self.calls: Dict[str, Any] = {}
 
     def add_user(
-        self,
-        user_name: str,
-        first_name: str,
-        last_name: str,
-        email: str,
-        password: str,
-        groups: Optional[List[str]]
+            self,
+            user_name: str,
+            first_name: str,
+            last_name: str,
+            email: str,
+            password: str,
+            groups: Optional[List[str]]
     ) -> CmdResult:
         self.calls["add_user"] = {
             "user_name": user_name,
@@ -51,10 +50,10 @@ class RecordingConsole:
         return CmdResult(ok=True, code=0, out="ok", err="")
 
     def link_user_to_group(
-        self,
-        user_name: str,
-        group_name: str,
-        permission: str,
+            self,
+            user_name: str,
+            group_name: str,
+            permission: str,
     ) -> CmdResult:
         self.calls["link_user_to_group"] = {
             "user_name": user_name,
@@ -64,18 +63,18 @@ class RecordingConsole:
         return CmdResult(ok=True, code=0, out="ok", err="")
 
     def add_queue(
-        self,
-        name: str,
-        group: str,
-        *,
-        comment: Optional[str] = None,
-        system_address_id: Optional[int] = None,
-        system_address_name: Optional[str] = None,
-        unlock_timeout: Optional[int] = None,
-        first_response_time: Optional[int] = None,
-        update_time: Optional[int] = None,
-        solution_time: Optional[int] = None,
-        calendar: Optional[int] = None,
+            self,
+            name: str,
+            group: str,
+            *,
+            comment: Optional[str] = None,
+            system_address_id: Optional[int] = None,
+            system_address_name: Optional[str] = None,
+            unlock_timeout: Optional[int] = None,
+            first_response_time: Optional[int] = None,
+            update_time: Optional[int] = None,
+            solution_time: Optional[int] = None,
+            calendar: Optional[int] = None,
     ) -> CmdResult:
         self.calls["add_queue"] = {
             "name": name,

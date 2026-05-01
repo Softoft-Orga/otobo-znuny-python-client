@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from otobo_znuny_python_client.setup.webservices.builder import (
+from otobo_znuny.setup.webservices.builder import (
     DEFAULT_FRAMEWORK_VERSION,
     WebserviceBuilder,
 )
-from otobo_znuny_python_client.setup.webservices.operations import (
+from otobo_znuny.setup.webservices.operations import (
     SUPPORTED_OPERATION_SPECS,
     SUPPORTED_OPERATIONS_DOC,
 )
-from otobo_znuny_python_client.setup.webservices.utils import generate_enabled_operations_list
+from otobo_znuny.setup.webservices.utils import generate_enabled_operations_list
 
 __all__ = [
     "DEFAULT_FRAMEWORK_VERSION",
