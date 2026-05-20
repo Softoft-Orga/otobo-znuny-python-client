@@ -1,13 +1,16 @@
-# OTOBO Znuny Python Client
+# OTOBO and Znuny Python SDKs
 
-Welcome to the documentation for the OTOBO / Znuny REST API Python client. This site
-explains how to install the package, configure access to your OTOBO or Znuny instance,
-and automate routine tasks via the provided command-line tools and Python API.
+Documentation for the **OTOBO** and **Znuny** GenericInterface Python SDKs.
 
-Use the **Getting Started** section to learn how to set up credentials and run your first
-requests. The **Interactive Installation Setup** guide walks through the interactive CLI
-wizard that creates configuration files for you.
+## Choose your product
 
-If you would like to contribute improvements to the documentation, open the page with the
-"Edit this page" link in the top-right corner to jump straight to the source file on
-GitHub.
+- [OTOBO getting started](getting-started-otobo.md) — `from otobo import OTOBOClient`
+- [Znuny getting started](getting-started-znuny.md) — `from znuny import ZnunyClient`
+
+## Shared guides
+
+- [Interactive installation setup](interactive-installation-setup.md)
+- [Library overview](library-overview.md)
+- [Migration from the combined client](migration.md)
+
+Contributions welcome via the **Edit this page** link on GitHub.

@@ -1,8 +1,3 @@
-from pydantic import SecretStr
+from otrs_gi_core.domain_models.basic_auth_model import BasicAuth
 
-from otobo_znuny.util.safe_base_model import SafeBaseModel
-
-
-class BasicAuth(SafeBaseModel):
-    user_login: str
-    password: SecretStr
+__all__ = ["BasicAuth"]

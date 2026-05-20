@@ -244,7 +244,7 @@ wheels = [
 
 [[package]]
 name = "otobo-znuny"
-version = "1.4.1"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -295,7 +295,7 @@ requires-dist = [
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.4.20250913" },
     { name = "zxcvbn", specifier = ">=4.5.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "otobo", "znuny"]
 
 [package.metadata.requires-dev]
 dev = [

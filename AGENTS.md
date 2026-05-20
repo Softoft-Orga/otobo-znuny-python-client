@@ -1,55 +1,36 @@
-# OTOBO Znuny Python Client - Agent Guide
+# OTOBO / Znuny Python SDKs - Agent Guide
 
 This file takes precedence over the repository-root `AGENTS.md` for work inside
 `otobo-znuny-python-client/`.
 
 ## Purpose
 
-This project is the Python client library for the OTOBO / Znuny REST API. It is
-a reusable package, not the OTAI Runtime or Studio. Keep changes focused on the
-client library, CLI helpers, documentation, and tests for OTOBO/Znuny API usage.
-
-## Stack
-
-- Python 3.11+
-- `httpx` for async HTTP calls
-- Pydantic v2 for request, response, and domain models
-- Typer-based CLI helpers
-- pytest / pytest-asyncio for tests
-- MkDocs Material for documentation
+Python SDKs for OTOBO and Znuny GenericInterface REST APIs. Shared logic is in
+`otrs_gi_core`; product-facing imports are `otobo` and `znuny`. Legacy paths
+`otobo_znuny` and `otobo_znuny_python_client` remain as compatibility shims.
 
 ## Layout
 
-- `src/otobo_znuny/` is the primary package.
-- `src/otobo_znuny_python_client/` contains compatibility package paths; do not
-remove or rename them without checking downstream import compatibility.
-- `tests/unit/` contains isolated tests.
-- `tests/e2e/` contains tests that may require a real or local OTOBO/Znuny
-system.
-- `docs/` contains MkDocs source content; start at `[docs/index.md](./docs/index.md)`.
+- `src/otrs_gi_core/` — shared async client, models, mappers, CLI core, setup
+- `src/otobo/` — OTOBO-branded public API and CLI (`otobo-cli`)
+- `src/znuny/` — Znuny-branded public API and CLI (`znuny-cli`)
+- `src/otobo_znuny/` — deprecated compatibility re-exports
+- `src/otobo_znuny_python_client/` — deprecated compatibility re-exports
+- `tests/unit/` — isolated tests; `tests/e2e/` needs a live system
+- `docs/` — MkDocs source; start at `docs/index.md`
 
 ## Commands
 
 ```powershell
 uv sync --group dev
-uv run pytest
+uv run pytest tests/unit
 uv run ruff check .
-uv run mypy .
-uv run --group docs mkdocs serve
+uv run mypy src/otrs_gi_core src/otobo src/znuny
 ```
-
-Run unit tests for focused library changes. Run E2E tests only when the required
-OTOBO/Znuny test system and credentials are available.
 
 ## Guardrails
 
-- Preserve the public API unless the task explicitly asks for a breaking change.
-- Keep async client behavior async; do not add blocking network calls to client
-paths.
-- Model API payloads with Pydantic instead of untyped dictionaries when the shape
-is stable.
-- Do not commit real OTOBO/Znuny credentials, generated local configs, session
-data, or `.env` files.
-- Update `docs/` and README examples when CLI behavior, configuration, or public
-client APIs change.
-
+- Keep shared REST behavior in `otrs_gi_core`; product differences belong in
+  `otobo` / `znuny` CLI environment defaults only unless behavior truly diverges.
+- Preserve legacy import paths unless explicitly removing a compatibility window.
+- Do not commit credentials, `.env`, or generated local configs.

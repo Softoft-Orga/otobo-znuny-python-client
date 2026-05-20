@@ -86,6 +86,6 @@ def test_builder_transport_config():
     assert transport["Type"] == "HTTP::REST"
 
     routes = transport["Config"]["RouteOperationMapping"]
-    assert routes["ticket-create"]["Route"] == "/tickets"
-    assert routes["ticket-get"]["Route"] == "/tickets/:TicketId"
+    assert routes["ticket-create"]["Route"] == "/ticket-create"
+    assert routes["ticket-get"]["Route"] == "/ticket-get"
     assert "FrameworkVersion" in config

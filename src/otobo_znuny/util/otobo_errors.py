@@ -1,6 +1,3 @@
-class OTOBOError(Exception):
+from otrs_gi_core.util.errors import GenericInterfaceError as OTOBOError
 
-    def __init__(self, code: str, message: str):
-        super().__init__(f"{code}: {message}")
-        self.code = code
-        self.message = message
+__all__ = ["OTOBOError"]

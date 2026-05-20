@@ -1,45 +1,86 @@
-# Python OTOBO Client Library
+# OTOBO and Znuny Python SDKs
 
-An asynchronous Python client for interacting with the OTOBO / Znuny REST API. Built with `httpx`
-and `pydantic` for
-type safety
-and ease of use.
+This repository ships **two customer-facing Python SDKs** plus a shared GenericInterface core:
+
+| Package | Import | Client class |
+| --- | --- | --- |
+| **OTOBO SDK** | `pip install otobo-znuny` then `from otobo import OTOBOClient` | `OTOBOClient` |
+| **Znuny SDK** | `pip install otobo-znuny` then `from znuny import ZnunyClient` | `ZnunyClient` |
+| **Compatibility (deprecated)** | `from otobo_znuny.clients.otobo_client import OTOBOZnunyClient` | `OTOBOZnunyClient` |
+
+Shared REST logic lives in `otrs_gi_core`. OTOBO and Znuny differ mainly in CLI console paths and setup defaults.
 
 ## Documentation
 
-The project documentation is built with [MkDocs](https://www.mkdocs.org/) and the
-[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme. You can browse the
-Markdown sources locally or serve the documentation site with:
+Built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/):
 
 ```bash
 uv run --group docs mkdocs serve
 ```
 
-The published sections include:
+- [OTOBO getting started](docs/getting-started-otobo.md)
+- [Znuny getting started](docs/getting-started-znuny.md)
+- [Migration from the combined client](docs/migration.md)
 
-- [Getting started (English)](docs/getting-started.md)
-- [Library overview](docs/library-overview.md)
+## Quick start — OTOBO
+
+```bash
+pip install otobo-znuny
+```
+
+```python
+from otobo import OTOBOClient, BasicAuth, ClientConfig, TicketCreate, TicketOperation
+
+config = ClientConfig(
+    base_url="https://your-otobo-server",
+    webservice_name="MyWebservice",
+    operation_url_map={
+        TicketOperation.CREATE: "ticket-create",
+        TicketOperation.GET: "ticket-get",
+        TicketOperation.SEARCH: "ticket-search",
+        TicketOperation.UPDATE: "ticket-update",
+    },
+)
+
+client = OTOBOClient(config)
+client.login(BasicAuth(user_login="agent", password="secret"))
+```
+
+## Quick start — Znuny
+
+```python
+from znuny import ZnunyClient, BasicAuth, ClientConfig, TicketOperation
+
+client = ZnunyClient(
+    ClientConfig(
+        base_url="https://your-znuny-server",
+        webservice_name="MyWebservice",
+        operation_url_map={
+            TicketOperation.CREATE: "ticket-create",
+            TicketOperation.GET: "ticket-get",
+            TicketOperation.SEARCH: "ticket-search",
+            TicketOperation.UPDATE: "ticket-update",
+        },
+    )
+)
+```
+
+## CLI tools
+
+```bash
+otobo-cli setup-system
+znuny-cli setup-system
+```
+
+The legacy combined CLI remains available via `python -m otobo_znuny.cli.app`.
 
 ## Features
 
-* **Asynchronous** HTTP requests using `httpx.AsyncClient`
-* **Pydantic** models for request and response data validation
-* Full CRUD operations for tickets:
-
-    * `TicketCreate`
-    * `TicketSearch`
-    * `TicketGet`
-    * `TicketUpdate`
-* **Error handling** via `OTOBOError` for API errors
-* Utility method `search_and_get` to combine search results with detailed retrieval
-
-## Installation
-
-Install from PyPI:
-
-```bash
-pip install otobo_znuny
-```
+- Async HTTP via `httpx.AsyncClient`
+- Pydantic v2 models for requests and responses
+- Ticket CRUD: create, search, get, update
+- `search_and_get` helper
+- Webservice YAML builder and interactive setup wizard
 
 ## License
 

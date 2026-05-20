@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "otobo_znuny"
-version = "1.4.1"
-description = "Python client library for the OTOBO / Znuny REST API"
+name = "otobo-znuny"
+version = "2.0.0"
+description = "Python SDKs for OTOBO and Znuny GenericInterface REST APIs"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Tobias Bück", email = "tab@softoft.de" }]
@@ -19,7 +19,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Framework :: AsyncIO"
+    "Framework :: AsyncIO",
 ]
 dependencies = [
     "httpx>=0.27,<0.29",
@@ -41,10 +41,16 @@ dev = [
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20250913",
 ]
+otobo = []
+znuny = []
+
+[project.scripts]
+otobo-cli = "otobo.cli:run"
+znuny-cli = "znuny.cli:run"
 
 [project.urls]
-homepage = "https://otobo-docs.softoft.de/administration/automation/rest-api"
-documentation = "https://otobo-docs.softoft.de/administration/automation/rest-api"
+homepage = "https://github.com/Softoft-GmbH/otobo-znuny-python-client"
+documentation = "https://github.com/Softoft-GmbH/otobo-znuny-python-client"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -69,4 +75,7 @@ python_version = "3.13"
 strict = true
 
 [mypy-mariadb]
+ignore_missing_imports = true
+
+[mypy-zxcvbn]
 ignore_missing_imports = true

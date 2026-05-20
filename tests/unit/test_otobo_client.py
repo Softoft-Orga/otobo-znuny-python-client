@@ -140,7 +140,7 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
         return DummyRequest()
 
     monkeypatch.setattr(
-        "otobo_znuny.clients.otobo_client.to_ws_ticket_create",
+        "otrs_gi_core.clients.generic_interface_client.to_ws_ticket_create",
         fake_build_request,
     )
     response_ticket = WsTicketOutput(TicketID=1)
@@ -158,7 +158,7 @@ async def test_create_ticket_uses_mappers(monkeypatch: pytest.MonkeyPatch) -> No
         return parsed_ticket
 
     monkeypatch.setattr(
-        "otobo_znuny.clients.otobo_client.from_ws_ticket_detail",
+        "otrs_gi_core.clients.generic_interface_client.from_ws_ticket_detail",
         fake_parse,
     )
 
@@ -206,7 +206,7 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
             return request_dump
 
     monkeypatch.setattr(
-        "otobo_znuny.clients.otobo_client.to_ws_ticket_get",
+        "otrs_gi_core.clients.generic_interface_client.to_ws_ticket_get",
         lambda ticket_id: DummyRequest(),
     )
 
@@ -226,7 +226,7 @@ async def test_get_ticket_returns_parsed_ticket(monkeypatch: pytest.MonkeyPatch)
         return parsed_ticket
 
     monkeypatch.setattr(
-        "otobo_znuny.clients.otobo_client.from_ws_ticket_detail",
+        "otrs_gi_core.clients.generic_interface_client.from_ws_ticket_detail",
         fake_parse,
     )
 
@@ -266,7 +266,7 @@ async def test_search_tickets_returns_ids(monkeypatch: pytest.MonkeyPatch) -> No
             return request_dump
 
     monkeypatch.setattr(
-        "otobo_znuny.clients.otobo_client.to_ws_ticket_search",
+        "otrs_gi_core.clients.generic_interface_client.to_ws_ticket_search",
         lambda _: DummyRequest(),
     )
 

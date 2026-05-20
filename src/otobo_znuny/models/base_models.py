@@ -1,4 +1,1 @@
-from typing import Literal, TypeAlias
-
-
-BooleanInteger: TypeAlias = Literal[0, 1]
+from otrs_gi_core.models.base_models import *  # noqa: F403

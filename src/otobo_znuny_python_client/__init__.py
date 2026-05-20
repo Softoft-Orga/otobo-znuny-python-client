@@ -1,25 +1,25 @@
-"""Convenience re-exports for the public package API."""
+"""Deprecated compatibility package. Prefer `from otobo import OTOBOClient` or `from znuny import ZnunyClient`."""
 
-from otobo_znuny.cli.otobo_console import OtoboConsole
-from otobo_znuny.setup.webservices import (
+from otobo import OTOBOClient as OTOBOZnunyClient
+from otobo import OTOBOClient as Client
+from otobo import (
+    Article,
+    BasicAuth,
+    ClientConfig,
+    IdName,
+    OperationUrlMap,
     SUPPORTED_OPERATION_SPECS,
     SUPPORTED_OPERATIONS_DOC,
-)
-from otobo_znuny.setup.webservices.builder import WebserviceBuilder
-from .clients.otobo_client import OTOBOZnunyClient
-from .clients.otobo_client import OTOBOZnunyClient as Client
-from .domain_models.basic_auth_model import BasicAuth
-from .domain_models.otobo_client_config import ClientConfig, OperationUrlMap
-from .domain_models.ticket_models import (
-    Article,
-    IdName,
     Ticket,
     TicketBase,
     TicketCreate,
+    TicketOperation,
     TicketSearch,
     TicketUpdate,
+    WebserviceBuilder,
 )
-from .domain_models.ticket_operation import TicketOperation
+from otobo_znuny.cli.otobo_console import OtoboConsole
+from otobo_znuny.cli.otobo_command_runner import OtoboCommandRunner
 
 __all__ = [
     "Article",
@@ -28,6 +28,7 @@ __all__ = [
     "ClientConfig",
     "IdName",
     "OperationUrlMap",
+    "OtoboCommandRunner",
     "OtoboConsole",
     "OTOBOZnunyClient",
     "SUPPORTED_OPERATION_SPECS",
