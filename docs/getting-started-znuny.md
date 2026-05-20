@@ -3,7 +3,7 @@
 Install the distribution and import the **Znuny-branded** namespace:
 
 ```bash
-pip install otobo-znuny
+pip install znuny
 ```
 
 ```python

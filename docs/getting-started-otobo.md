@@ -3,7 +3,7 @@
 Install the distribution and import the **OTOBO-branded** namespace:
 
 ```bash
-pip install otobo-znuny
+pip install otobo
 ```
 
 ```python

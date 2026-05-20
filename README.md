@@ -4,9 +4,9 @@ This repository ships **two customer-facing Python SDKs** plus a shared GenericI
 
 | Package | Import | Client class |
 | --- | --- | --- |
-| **OTOBO SDK** | `pip install otobo-znuny` then `from otobo import OTOBOClient` | `OTOBOClient` |
-| **Znuny SDK** | `pip install otobo-znuny` then `from znuny import ZnunyClient` | `ZnunyClient` |
-| **Compatibility (deprecated)** | `from otobo_znuny.clients.otobo_client import OTOBOZnunyClient` | `OTOBOZnunyClient` |
+| **OTOBO SDK** | `pip install otobo` then `from otobo import OTOBOClient` | `OTOBOClient` |
+| **Znuny SDK** | `pip install znuny` then `from znuny import ZnunyClient` | `ZnunyClient` |
+| **Compatibility (deprecated)** | `pip install otobo-znuny` then `from otobo_znuny.clients.otobo_client import OTOBOZnunyClient` | `OTOBOZnunyClient` |
 
 Shared REST logic lives in `otrs_gi_core`. OTOBO and Znuny differ mainly in CLI console paths and setup defaults.
 
@@ -25,7 +25,7 @@ uv run --group docs mkdocs serve
 ## Quick start — OTOBO
 
 ```bash
-pip install otobo-znuny
+pip install otobo
 ```
 
 ```python
@@ -47,6 +47,10 @@ client.login(BasicAuth(user_login="agent", password="secret"))
 ```
 
 ## Quick start — Znuny
+
+```bash
+pip install znuny
+```
 
 ```python
 from znuny import ZnunyClient, BasicAuth, ClientConfig, TicketOperation
